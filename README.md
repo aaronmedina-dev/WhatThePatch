@@ -241,11 +241,20 @@ wtp --review <PR_URL>
 ### Examples
 
 ```bash
-# GitHub PR
+# GitHub PR (default: markdown format, auto-opens)
 wtp --review https://github.com/owner/repo/pull/123
 
 # Bitbucket PR
 wtp --review https://bitbucket.org/workspace/repo/pull-requests/456
+
+# Output as HTML (opens in browser)
+wtp --review https://github.com/owner/repo/pull/123 --format html
+
+# Output as plain text
+wtp --review https://github.com/owner/repo/pull/123 --format txt
+
+# Don't auto-open the file
+wtp --review https://github.com/owner/repo/pull/123 --no-open
 ```
 
 The review will be saved to the configured output directory (default: `~/pr-reviews/`).
@@ -255,6 +264,8 @@ The review will be saved to the configured output directory (default: `~/pr-revi
 | Command | Description |
 |---------|-------------|
 | `wtp --review <URL>` | Generate a review for the given PR |
+| `wtp --review <URL> --format <fmt>` | Output in specific format: md, txt, or html |
+| `wtp --review <URL> --no-open` | Don't auto-open the file after generation |
 | `wtp --help` | Show help and usage information |
 | `wtp --status` | Show current configuration and active AI engine |
 | `wtp --switch-engine` | Switch between configured AI engines |
@@ -336,6 +347,8 @@ See `config.example.yaml` for all available options:
 |---------|-------------|
 | `output.directory` | Where to save review files (default: `~/pr-reviews`) |
 | `output.filename_pattern` | Filename template. Variables: `{repo}`, `{pr_number}`, `{ticket_id}`, `{branch}` |
+| `output.format` | Output format: `md`, `txt`, or `html` (default: `md`) |
+| `output.auto_open` | Auto-open file after generation (default: `true`) |
 
 ### Ticket ID Extraction
 

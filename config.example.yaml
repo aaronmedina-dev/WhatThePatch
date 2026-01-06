@@ -75,7 +75,17 @@ output:
   # {pr_number} - PR number
   # {ticket_id} - extracted ticket ID (or "NO-TICKET" if not found)
   # {branch} - source branch name (sanitized)
-  filename_pattern: "{repo}-{pr_number}.md"
+  # Note: Extension is added automatically based on format setting
+  filename_pattern: "{repo}-{pr_number}"
+
+  # Output format: md (markdown), txt (plain text), or html (styled HTML)
+  # Can be overridden with --format flag
+  format: "md"
+
+  # Auto-open file after generation
+  # Opens in browser for HTML, default text editor for md/txt
+  # Can be disabled with --no-open flag
+  auto_open: true
 
 # Ticket ID extraction
 ticket:
