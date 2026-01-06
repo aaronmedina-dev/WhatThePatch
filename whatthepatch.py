@@ -143,6 +143,7 @@ def fetch_github_pr(owner: str, repo: str, pr_number: str, token: str) -> dict:
         "source_branch": pr_data["head"]["ref"],
         "target_branch": pr_data["base"]["ref"],
         "diff": diff_response.text,
+        "author": pr_data["user"]["login"],
     }
 
 
@@ -177,6 +178,7 @@ def fetch_bitbucket_pr(
         "source_branch": pr_data["source"]["branch"]["name"],
         "target_branch": pr_data["destination"]["branch"]["name"],
         "diff": diff_response.text,
+        "author": pr_data["author"]["display_name"],
     }
 
 

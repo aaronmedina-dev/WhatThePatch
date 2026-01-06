@@ -24,7 +24,7 @@ Generate markdown with this exact structure:
 
 <1-2 sentence description of what this PR does>
 
-<Author of PR>
+**Author:** {pr_author}
 
 **Changes:**
 - <bullet list of key changes>

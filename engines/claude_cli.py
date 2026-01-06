@@ -143,6 +143,8 @@ class ClaudeCLIEngine(BaseEngine):
             # Write PR metadata to a file
             metadata_file = temp_dir / "pr-metadata.txt"
             metadata_content = f"""PR Title: {pr_data["title"]}
+PR URL: {pr_data.get("pr_url", "N/A")}
+Author: {pr_data.get("author", "Unknown")}
 Ticket ID: {ticket_id}
 Source Branch: {pr_data["source_branch"]}
 Target Branch: {pr_data["target_branch"]}
@@ -152,9 +154,10 @@ PR Description:
 """
             metadata_file.write_text(metadata_content)
 
-            # Write the prompt template for reference
+            # Write the formatted prompt (with all template variables filled in)
             template_file = temp_dir / "review-template.md"
-            template_file.write_text(prompt_template)
+            formatted_prompt = self.build_prompt(pr_data, ticket_id, prompt_template)
+            template_file.write_text(formatted_prompt)
 
             # Set up Claude permissions
             self._setup_permissions(temp_dir)
