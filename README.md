@@ -8,16 +8,16 @@ A CLI tool to automatically generate PR reviews using AI. Supports GitHub and Bi
 
 Software development has never moved faster. With the evolution of AI-assisted coding, changes are being pushed at unprecedented speed. While this acceleration is exciting, it also presents a challenge: how do we ensure we truly understand the code we're approving?
 
-WhatThePatch was created to help developers digest and understand changes in their codebase. Instead of blindly approving pull requests or spending hours manually reviewing complex diffs, this tool leverages AI to provide comprehensive, intelligent code reviews that highlight potential issues, security concerns, and areas that need attention.
+WhatThePatch!? was created to help developers digest and understand changes in their codebase. Instead of blindly approving pull requests or spending hours manually reviewing complex diffs, this tool leverages AI to provide comprehensive, intelligent code reviews that highlight potential issues, security concerns, and areas that need attention.
 
 The goal isn't to replace human judgment, but to augment it - giving reviewers the insights they need to make informed decisions quickly and confidently.
 
 ## How It Compares
 
-There are several AI-powered PR review tools available. Here's how WhatThePatch differs:
+There are several AI-powered PR review tools available. Here's how WhatThePatch!? differs:
 
-| Feature | WhatThePatch | CodeRabbit, PR-Agent, etc. |
-|---------|--------------|---------------------------|
+| Feature | WhatThePatch!? | CodeRabbit, PR-Agent, etc. |
+|---------|----------------|---------------------------|
 | **Hosting** | Self-hosted, runs locally | Cloud/SaaS |
 | **Privacy** | Code only sent to your chosen AI provider | Code processed by third-party servers |
 | **Output Formats** | Markdown, plain text, or styled HTML | PR comments only |
@@ -28,7 +28,7 @@ There are several AI-powered PR review tools available. Here's how WhatThePatch 
 | **Team Auth** | Works with Claude Code/Codex team plans | Separate subscription required |
 | **Offline Archive** | Reviews saved locally forever | Dependent on service availability |
 
-### When to Use WhatThePatch
+### When to Use WhatThePatch!?
 
 - You want **full control** over how reviews are conducted
 - You're working with **multiple repo providers** and/or accounts
@@ -263,7 +263,7 @@ The review will be saved to the configured output directory (default: `~/pr-revi
 
 ### Output Formats
 
-WhatThePatch supports three output formats:
+WhatThePatch!? supports three output formats:
 
 | Format | Extension | Description |
 |--------|-----------|-------------|
@@ -386,9 +386,9 @@ See `config.example.yaml` for all available options:
 
 ## Customizing the Review Prompt
 
-**This is what sets WhatThePatch apart from other AI-powered PR review tools.**
+**This is what sets WhatThePatch!? apart from other AI-powered PR review tools.**
 
-Most PR review tools offer limited or no customization - you get a generic review output regardless of whether you're a DevOps engineer reviewing Terraform configs, a frontend developer checking React components, or a backend engineer analyzing API endpoints. WhatThePatch gives you complete control over the review process through a single, editable file: `prompt.md`.
+Most PR review tools offer limited or no customization - you get a generic review output regardless of whether you're a DevOps engineer reviewing Terraform configs, a frontend developer checking React components, or a backend engineer analyzing API endpoints. WhatThePatch!? gives you complete control over the review process through a single, editable file: `prompt.md`.
 
 The `prompt.md` file is the brain of your reviews. It controls:
 - **What the AI looks for** - Define focus areas specific to your role (security, accessibility, performance, etc.)
@@ -413,7 +413,7 @@ The `--edit-prompt` command uses your `$EDITOR` or `$VISUAL` environment variabl
 
 ### Role-Based Prompt Templates
 
-Different roles have different review priorities. WhatThePatch includes example templates in `prompt-templates/` that you can use as starting points:
+Different roles have different review priorities. WhatThePatch!? includes example templates in `prompt-templates/` that you can use as starting points:
 
 | Template | Focus Areas |
 |----------|-------------|
