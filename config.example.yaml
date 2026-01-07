@@ -79,8 +79,8 @@ output:
   filename_pattern: "{repo}-{pr_number}"
 
   # Output format: md (markdown), txt (plain text), or html (styled HTML)
-  # Can be overridden with --format flag
-  format: "md"
+  # Can be overridden with --format flag, or changed with --switch-output
+  format: "html"
 
   # Auto-open file after generation
   # Opens in browser for HTML, default text editor for md/txt

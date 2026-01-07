@@ -221,7 +221,7 @@ def save_review(
     ticket_id: str,
     pr_data: dict,
     config: dict,
-    output_format: str = "md",
+    output_format: str = "html",
 ) -> Path:
     """Save review to output directory.
 
@@ -712,7 +712,7 @@ def show_status():
     output_dir = output.get("directory", "~/pr-reviews")
     print(f"Directory: {output_dir}")
     print(f"Filename pattern: {output.get('filename_pattern', '{repo}-{pr_number}.md')}")
-    print(f"Format: {output.get('format', 'md')}")
+    print(f"Format: {output.get('format', 'html')}")
     print(f"Auto-open: {'Yes' if output.get('auto_open', True) else 'No'}")
 
     # Ticket extraction
@@ -732,6 +732,7 @@ def show_status():
     print("\n" + "=" * 50)
     print("\nCommands:")
     print("  wtp --switch-engine  Switch to a different AI engine")
+    print("  wtp --switch-output  Switch output format (html, md, txt)")
     print("  wtp --test-config    Run full configuration tests")
     print("  wtp --edit-prompt    Customize review prompt")
 
@@ -885,6 +886,98 @@ def switch_engine():
         print("Please update config.yaml manually.")
 
 
+def switch_output():
+    """Interactive output format switcher."""
+    print("WhatThePatch - Switch Output Format\n")
+    print("=" * 50)
+
+    # Check if config exists
+    config_path = get_file_path("config.yaml")
+    if not config_path.exists():
+        print(f"\nConfig file not found at: {config_path}")
+        print("Run 'python setup.py' to configure first.")
+        return
+
+    config = load_config()
+    current_format = config.get("output", {}).get("format", "html")
+
+    available_formats = [
+        ("html", "Styled HTML with GitHub-like formatting, opens in browser"),
+        ("md", "Markdown format, opens in default text editor"),
+        ("txt", "Plain text format, opens in default text editor"),
+    ]
+
+    # Display current format and all options
+    print(f"\nCurrent format: {current_format}")
+    print(f"\nAvailable formats:\n")
+
+    for i, (fmt, description) in enumerate(available_formats, 1):
+        active_marker = " (active)" if fmt == current_format else ""
+        print(f"  {i}. {fmt}{active_marker}")
+        print(f"     {description}")
+        print()
+
+    # Prompt for selection
+    print("-" * 50)
+    print("Enter the number of the format to switch to,")
+    print("or 'q' to quit.")
+    print()
+
+    while True:
+        choice = input("Your choice: ").strip().lower()
+
+        if choice == 'q':
+            print("No changes made.")
+            return
+
+        try:
+            choice_num = int(choice)
+            if 1 <= choice_num <= len(available_formats):
+                selected_format = available_formats[choice_num - 1][0]
+                break
+            else:
+                print(f"Please enter a number between 1 and {len(available_formats)}")
+        except ValueError:
+            print("Invalid input. Enter a number or 'q'.")
+
+    # Update config file
+    if selected_format == current_format:
+        print(f"\n{selected_format} is already the active format.")
+        return
+
+    try:
+        # Read the raw config file to preserve formatting/comments
+        with open(config_path, 'r') as f:
+            config_content = f.read()
+
+        # Replace the format line under output section
+        # Match: format: "anything" or format: 'anything' or format: anything
+        new_content = re.sub(
+            r'^(\s*format:\s*)["\']?[\w]+["\']?\s*$',
+            f'\\1"{selected_format}"',
+            config_content,
+            flags=re.MULTILINE
+        )
+
+        if new_content == config_content:
+            # If regex didn't match, fall back to full YAML rewrite
+            if "output" not in config:
+                config["output"] = {}
+            config["output"]["format"] = selected_format
+            with open(config_path, 'w') as f:
+                yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        else:
+            with open(config_path, 'w') as f:
+                f.write(new_content)
+
+        print(f"\nSwitched to: {selected_format}")
+        print(f"Config updated: {config_path}")
+
+    except Exception as e:
+        print(f"\nError updating config: {e}")
+        print("Please update config.yaml manually.")
+
+
 def show_prompt():
     """Display the current review prompt template."""
     prompt_path = get_file_path("prompt.md")
@@ -1013,6 +1106,7 @@ Examples:
   wtp --review https://bitbucket.org/workspace/repo/pull-requests/456
   wtp --status
   wtp --switch-engine
+  wtp --switch-output
   wtp --test-config
   wtp --update
   wtp --show-prompt
@@ -1060,10 +1154,15 @@ Author:
         help="Switch between configured AI engines",
     )
     parser.add_argument(
+        "--switch-output",
+        action="store_true",
+        help="Switch between output formats (html, md, txt)",
+    )
+    parser.add_argument(
         "--format", "-f",
         choices=["md", "txt", "html"],
         metavar="FORMAT",
-        help="Output format: md (default), txt, or html",
+        help="Output format: html (default), md, or txt",
     )
     parser.add_argument(
         "--no-open",
@@ -1091,6 +1190,10 @@ Author:
 
     if args.switch_engine:
         switch_engine()
+        return
+
+    if args.switch_output:
+        switch_output()
         return
 
     if args.test_config:
@@ -1154,7 +1257,7 @@ Author:
     review = generate_review(pr_data, ticket_id, config)
 
     # Determine output format (CLI arg overrides config)
-    output_format = args.format or config.get("output", {}).get("format", "md")
+    output_format = args.format or config.get("output", {}).get("format", "html")
     print(f"Saving review ({output_format} format)...")
     output_path = save_review(review, pr_info, ticket_id, pr_data, config, output_format)
 

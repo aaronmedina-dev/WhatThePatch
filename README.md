@@ -241,7 +241,7 @@ wtp --review <PR_URL>
 ### Examples
 
 ```bash
-# GitHub PR (default: markdown format, auto-opens)
+# GitHub PR (default: html format, auto-opens in browser)
 wtp --review https://github.com/owner/repo/pull/123
 
 # Bitbucket PR
@@ -265,9 +265,11 @@ WhatThePatch supports three output formats:
 
 | Format | Extension | Description |
 |--------|-----------|-------------|
-| `md` | `.md` | Markdown (default) - Best for viewing in code editors or GitHub |
+| `html` | `.html` | Styled HTML (default) - GitHub-like styling with syntax highlighting |
+| `md` | `.md` | Markdown - Best for viewing in code editors or GitHub |
 | `txt` | `.txt` | Plain text - Same as markdown but with .txt extension |
-| `html` | `.html` | Styled HTML - GitHub-like styling with syntax highlighting |
+
+Use `wtp --switch-output` to change the default format, or `--format` flag for a one-time override.
 
 **HTML Output Features:**
 - GitHub-inspired styling with clean typography
@@ -286,11 +288,12 @@ WhatThePatch supports three output formats:
 | Command | Description |
 |---------|-------------|
 | `wtp --review <URL>` | Generate a review for the given PR |
-| `wtp --review <URL> --format <fmt>` | Output in specific format: md, txt, or html |
+| `wtp --review <URL> --format <fmt>` | Override output format for this review: html, md, or txt |
 | `wtp --review <URL> --no-open` | Don't auto-open the file after generation |
 | `wtp --help` | Show help and usage information |
 | `wtp --status` | Show current configuration and active AI engine |
 | `wtp --switch-engine` | Switch between configured AI engines |
+| `wtp --switch-output` | Switch default output format (html, md, txt) |
 | `wtp --test-config` | Test your configuration (tokens, API keys) |
 | `wtp --update` | Update the tool from the git repository |
 | `wtp --show-prompt` | Display the current review prompt template |
@@ -369,7 +372,7 @@ See `config.example.yaml` for all available options:
 |---------|-------------|
 | `output.directory` | Where to save review files (default: `~/pr-reviews`) |
 | `output.filename_pattern` | Filename template. Variables: `{repo}`, `{pr_number}`, `{ticket_id}`, `{branch}` |
-| `output.format` | Output format: `md`, `txt`, or `html` (default: `md`) |
+| `output.format` | Output format: `html`, `md`, or `txt` (default: `html`) |
 | `output.auto_open` | Auto-open file after generation (default: `true`) |
 
 ### Ticket ID Extraction
