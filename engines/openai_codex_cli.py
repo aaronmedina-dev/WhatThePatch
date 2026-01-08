@@ -188,7 +188,13 @@ class OpenAICodexCLIEngine(BaseEngine):
         except Exception as e:
             return False, f"Test failed: {e}"
 
-    def generate_review(self, pr_data: dict, ticket_id: str, prompt_template: str) -> str:
+    def generate_review(
+        self,
+        pr_data: dict,
+        ticket_id: str,
+        prompt_template: str,
+        external_context: str = "",
+    ) -> str:
         """Generate PR review using OpenAI Codex CLI."""
         is_valid, error = self.validate_config()
         if not is_valid:
@@ -218,7 +224,7 @@ PR Description:
 
             # Write the formatted prompt (with all template variables filled in)
             template_file = temp_dir / "review-template.md"
-            formatted_prompt = self.build_prompt(pr_data, ticket_id, prompt_template)
+            formatted_prompt = self.build_prompt(pr_data, ticket_id, prompt_template, external_context)
             template_file.write_text(formatted_prompt)
 
             # Build the prompt for Codex CLI

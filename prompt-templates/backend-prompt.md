@@ -125,6 +125,12 @@ Example: ### 🔴 Critical: SQL Injection Vulnerability
 
 ---
 
+## External Context
+
+{external_context}
+
+---
+
 ## Diff
 
 ```diff

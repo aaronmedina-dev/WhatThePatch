@@ -126,7 +126,13 @@ class ClaudeCLIEngine(BaseEngine):
 
         return settings_path
 
-    def generate_review(self, pr_data: dict, ticket_id: str, prompt_template: str) -> str:
+    def generate_review(
+        self,
+        pr_data: dict,
+        ticket_id: str,
+        prompt_template: str,
+        external_context: str = "",
+    ) -> str:
         """Generate PR review using Claude Code CLI."""
         is_valid, error = self.validate_config()
         if not is_valid:
@@ -156,7 +162,7 @@ PR Description:
 
             # Write the formatted prompt (with all template variables filled in)
             template_file = temp_dir / "review-template.md"
-            formatted_prompt = self.build_prompt(pr_data, ticket_id, prompt_template)
+            formatted_prompt = self.build_prompt(pr_data, ticket_id, prompt_template, external_context)
             template_file.write_text(formatted_prompt)
 
             # Set up Claude permissions

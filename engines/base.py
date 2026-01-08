@@ -45,7 +45,13 @@ class BaseEngine(ABC):
         pass
 
     @abstractmethod
-    def generate_review(self, pr_data: dict, ticket_id: str, prompt_template: str) -> str:
+    def generate_review(
+        self,
+        pr_data: dict,
+        ticket_id: str,
+        prompt_template: str,
+        external_context: str = "",
+    ) -> str:
         """
         Generate a PR review using this engine.
 
@@ -58,6 +64,7 @@ class BaseEngine(ABC):
                 - diff: The diff content
             ticket_id: Extracted ticket ID from branch name
             prompt_template: The review prompt template with placeholders
+            external_context: Optional external context from local files/directories
 
         Returns:
             Generated review as markdown string
@@ -91,7 +98,13 @@ class BaseEngine(ABC):
         """
         pass
 
-    def build_prompt(self, pr_data: dict, ticket_id: str, prompt_template: str) -> str:
+    def build_prompt(
+        self,
+        pr_data: dict,
+        ticket_id: str,
+        prompt_template: str,
+        external_context: str = "",
+    ) -> str:
         """
         Build the full prompt from template and PR data.
 
@@ -101,10 +114,12 @@ class BaseEngine(ABC):
             pr_data: PR information dictionary
             ticket_id: Ticket ID
             prompt_template: Template string with placeholders
+            external_context: Optional external context from local files/directories
 
         Returns:
             Formatted prompt string
         """
+        context_section = external_context if external_context else "No external context provided."
         return prompt_template.format(
             ticket_id=ticket_id,
             pr_title=pr_data["title"],
@@ -114,4 +129,5 @@ class BaseEngine(ABC):
             target_branch=pr_data["target_branch"],
             pr_description=pr_data["description"],
             diff=pr_data["diff"],
+            external_context=context_section,
         )

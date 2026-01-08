@@ -69,7 +69,13 @@ class OpenAIAPIEngine(BaseEngine):
         except Exception as e:
             return False, f"Connection failed: {e}"
 
-    def generate_review(self, pr_data: dict, ticket_id: str, prompt_template: str) -> str:
+    def generate_review(
+        self,
+        pr_data: dict,
+        ticket_id: str,
+        prompt_template: str,
+        external_context: str = "",
+    ) -> str:
         """Generate PR review using OpenAI API."""
         is_valid, error = self.validate_config()
         if not is_valid:
@@ -81,7 +87,7 @@ class OpenAIAPIEngine(BaseEngine):
             raise EngineError("openai package not installed. Run: pip install openai")
 
         # Build the full prompt
-        prompt = self.build_prompt(pr_data, ticket_id, prompt_template)
+        prompt = self.build_prompt(pr_data, ticket_id, prompt_template, external_context)
 
         # Get configuration
         api_key = self.config["api_key"]

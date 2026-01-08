@@ -125,6 +125,12 @@ Example: ### 🔴 Critical: Missing ARIA Labels on Interactive Elements
 
 ---
 
+## External Context
+
+{external_context}
+
+---
+
 ## Diff
 
 ```diff

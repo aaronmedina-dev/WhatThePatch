@@ -20,6 +20,7 @@ There are several AI-powered PR review tools available. Here's how WhatThePatch!
 |---------|----------------|---------------------------|
 | **Hosting** | Self-hosted, runs locally | Cloud/SaaS |
 | **Privacy** | Code only sent to your chosen AI provider | Code processed by third-party servers |
+| **External Context** | Add private repos/files as context | Limited to public/connected repos |
 | **Output Formats** | Markdown, plain text, or styled HTML | PR comments only |
 | **Review Prompt** | Fully customizable | Fixed or limited configuration |
 | **Bitbucket Support** | Native support | Limited or no support |
@@ -36,6 +37,7 @@ There are several AI-powered PR review tools available. Here's how WhatThePatch!
 - You're already paying for **Claude API, OpenAI API, or CLI tools**
 - **Privacy matters** - you don't want code on additional third-party servers
 - **Customize review criteria** to match your job role, tech stack, and team's or organisation standards
+- Your PRs **reference external private repositories** that cloud tools can't access
 
 ### Alternative Tools
 
@@ -285,11 +287,93 @@ Use `wtp --switch-output` to change the default format, or `--format` flag for a
 - **MD/TXT files**: Open in your default text editor
 - Disable with `--no-open` flag or set `auto_open: false` in config
 
+### Adding External Context
+
+**This is one of the biggest advantages of a local PR review tool.**
+
+Cloud-based PR review services can only see code that's publicly accessible or connected to their platform. When your PR references:
+- Private shared libraries
+- Internal packages from other repositories
+- Proprietary frameworks or utilities
+- Code from repositories on different platforms
+
+...these services make assumptions or miss important context entirely.
+
+WhatThePatch!? solves this by letting you include **any local files or directories** as additional context for the AI review:
+
+**Examples:**
+
+```bash
+# Include a private shared library
+wtp --review <URL> --context /path/to/internal-shared-lib
+
+# Include type definitions from another repo
+wtp --review <URL> -c /path/to/private-types-repo/src/types
+
+# Include multiple context sources
+wtp --review <URL> -c /path/to/auth-service -c /path/to/shared-utils
+```
+
+**How it works:**
+1. Files are read recursively from specified paths
+2. Content is added to the AI prompt as "External Context"
+3. The AI uses this context to understand references in your PR
+4. Binary files and common non-code directories (node_modules, .git, etc.) are automatically excluded
+
+**Size management:**
+If the combined context exceeds ~100KB, you'll be prompted to confirm before proceeding to avoid excessive API costs.
+
+### Testing and Debugging
+
+Use `--dry-run` and `--verbose` flags to test your setup without making AI API calls:
+
+**Dry Run (`--dry-run`):**
+Shows what would be sent to the AI without actually calling it. Useful for:
+- Verifying external context is being picked up correctly
+- Checking prompt size before incurring API costs
+- Testing configuration without waiting for AI response
+
+```bash
+# Test a review without calling AI
+wtp --review <URL> --dry-run
+
+# Test with external context
+wtp --review <URL> --context /path/to/lib --dry-run
+```
+
+**Verbose Mode (`--verbose`, `-v`):**
+Shows detailed output including a preview of the prompt that will be sent. Useful for:
+- Debugging prompt template issues
+- Seeing exactly what context is included
+- Verifying all template variables are populated correctly
+
+```bash
+# See prompt preview (still makes AI call)
+wtp --review <URL> --verbose
+
+# Combine with dry-run for full inspection without API call
+wtp --review <URL> -c /path/to/lib -v --dry-run
+```
+
+**Testing Context Reading:**
+A test script is included for testing context reading independently:
+
+```bash
+# Test reading a directory
+python test_context.py ./engines
+
+# Test reading multiple paths
+python test_context.py ./banner.py ./prompt.md /path/to/external/repo
+```
+
 ### CLI Commands
 
 | Command | Description |
 |---------|-------------|
 | `wtp --review <URL>` | Generate a review for the given PR |
+| `wtp --review <URL> --context PATH` | Add local file/directory as context (repeatable with `-c`) |
+| `wtp --review <URL> --dry-run` | Show what would be sent without calling the AI |
+| `wtp --review <URL> --verbose` | Show detailed output including prompt preview |
 | `wtp --review <URL> --format <fmt>` | Override output format for this review: html, md, or txt |
 | `wtp --review <URL> --no-open` | Don't auto-open the file after generation |
 | `wtp --help` | Show help and usage information |
@@ -487,6 +571,7 @@ The prompt file has several sections you can modify:
 | `{source_branch}` | Source branch name |
 | `{target_branch}` | Target branch name |
 | `{pr_description}` | PR description body |
+| `{external_context}` | External context from `--context` flag (or "No external context provided.") |
 | `{diff}` | The full diff content |
 
 ## Sample Output

@@ -34,6 +34,29 @@ from banner import print_banner
 # Install directory for all WhatThePatch files
 INSTALL_DIR = Path.home() / ".whatthepatch"
 
+# Context reading configuration
+CONTEXT_SIZE_WARNING_THRESHOLD = 100_000  # ~100KB
+
+# Directories to auto-exclude when reading context
+EXCLUDED_DIRS = {
+    'node_modules', '.git', '__pycache__', '.venv', 'venv',
+    'vendor', 'dist', 'build', '.next', '.nuxt', 'coverage',
+    '.pytest_cache', '.mypy_cache', '.tox', 'egg-info',
+    '.idea', '.vscode', '.DS_Store',
+}
+
+# Binary/non-text extensions to skip
+BINARY_EXTENSIONS = {
+    '.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.webp',
+    '.woff', '.woff2', '.ttf', '.eot', '.otf',
+    '.zip', '.tar', '.gz', '.rar', '.7z', '.bz2',
+    '.exe', '.dll', '.so', '.dylib', '.bin',
+    '.pyc', '.pyo', '.class', '.o', '.obj',
+    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+    '.mp3', '.mp4', '.wav', '.avi', '.mov', '.mkv',
+    '.sqlite', '.db', '.lock',
+}
+
 # Add install directory to path for engine imports
 if INSTALL_DIR.exists():
     sys.path.insert(0, str(INSTALL_DIR))
@@ -54,6 +77,141 @@ def get_file_path(filename: str) -> Path:
         return script_path
 
     return install_path  # Return install path for error messages
+
+
+def is_text_file(filepath: Path) -> bool:
+    """Check if file is likely a text file based on extension."""
+    return filepath.suffix.lower() not in BINARY_EXTENSIONS
+
+
+def should_exclude_dir(dirpath: Path) -> bool:
+    """Check if directory should be excluded from context reading."""
+    return dirpath.name in EXCLUDED_DIRS
+
+
+def read_context_paths(paths: list[str]) -> tuple[str, int]:
+    """
+    Read content from files/directories.
+
+    Args:
+        paths: List of file or directory paths to read
+
+    Returns:
+        Tuple of (formatted_content, total_size_bytes)
+    """
+    files_content: dict[str, str] = {}
+    total_size = 0
+    errors = []
+
+    for path_str in paths:
+        path = Path(path_str).expanduser().resolve()
+
+        if not path.exists():
+            errors.append(f"Path not found: {path_str}")
+            continue
+
+        if path.is_file():
+            # Single file
+            if is_text_file(path):
+                try:
+                    content = path.read_text(errors='replace')
+                    files_content[str(path)] = content
+                    total_size += len(content.encode('utf-8'))
+                except Exception as e:
+                    errors.append(f"Could not read {path}: {e}")
+            else:
+                errors.append(f"Skipped binary file: {path}")
+
+        elif path.is_dir():
+            # Directory - read recursively
+            for root, dirs, files in os.walk(path):
+                root_path = Path(root)
+
+                # Filter out excluded directories (modifies dirs in-place)
+                dirs[:] = [d for d in dirs if not should_exclude_dir(root_path / d)]
+
+                for filename in files:
+                    filepath = root_path / filename
+                    if is_text_file(filepath):
+                        try:
+                            content = filepath.read_text(errors='replace')
+                            # Use relative path from the provided context root
+                            relative_path = filepath.relative_to(path.parent)
+                            files_content[str(relative_path)] = content
+                            total_size += len(content.encode('utf-8'))
+                        except Exception:
+                            # Silently skip files that can't be read
+                            pass
+
+    # Report errors
+    if errors:
+        print("\nContext reading warnings:")
+        for error in errors:
+            print(f"  - {error}")
+        print()
+
+    if not files_content:
+        return "No readable files found in the provided context paths.", 0
+
+    return format_context_content(files_content), total_size
+
+
+def format_context_content(files: dict[str, str]) -> str:
+    """Format file contents with clear separators for the AI prompt."""
+    lines = ["The following external files have been provided as additional context:\n"]
+
+    for filepath, content in sorted(files.items()):
+        # Detect language from extension for code fence
+        ext = Path(filepath).suffix.lower()
+        lang_map = {
+            '.py': 'python', '.js': 'javascript', '.ts': 'typescript',
+            '.tsx': 'tsx', '.jsx': 'jsx', '.java': 'java', '.go': 'go',
+            '.rs': 'rust', '.rb': 'ruby', '.php': 'php', '.cs': 'csharp',
+            '.cpp': 'cpp', '.c': 'c', '.h': 'c', '.hpp': 'cpp',
+            '.swift': 'swift', '.kt': 'kotlin', '.scala': 'scala',
+            '.sh': 'bash', '.bash': 'bash', '.zsh': 'zsh',
+            '.yaml': 'yaml', '.yml': 'yaml', '.json': 'json',
+            '.xml': 'xml', '.html': 'html', '.css': 'css',
+            '.sql': 'sql', '.md': 'markdown', '.graphql': 'graphql',
+        }
+        lang = lang_map.get(ext, '')
+
+        lines.append(f"### File: {filepath}")
+        lines.append(f"```{lang}")
+        lines.append(content.rstrip())
+        lines.append("```")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def check_context_size(size_bytes: int) -> bool:
+    """
+    Check if context size exceeds threshold.
+    If so, warn user and ask for confirmation.
+
+    Args:
+        size_bytes: Total size of context in bytes
+
+    Returns:
+        True if should proceed, False to abort.
+    """
+    if size_bytes <= CONTEXT_SIZE_WARNING_THRESHOLD:
+        return True
+
+    size_kb = size_bytes / 1024
+    threshold_kb = CONTEXT_SIZE_WARNING_THRESHOLD / 1024
+
+    print(f"\nWarning: External context is large ({size_kb:.1f}KB)")
+    print(f"This exceeds the recommended threshold of {threshold_kb:.0f}KB")
+    print("Large context may increase API costs and processing time.\n")
+
+    try:
+        response = input("Continue anyway? (y/n): ").strip().lower()
+        return response == 'y'
+    except KeyboardInterrupt:
+        print("\n")
+        return False
 
 
 def load_prompt_template() -> str:
@@ -197,7 +355,12 @@ def sanitize_filename(name: str) -> str:
     return re.sub(r"[^\w\-_]", "-", name)
 
 
-def generate_review(pr_data: dict, ticket_id: str, config: dict) -> str:
+def generate_review(
+    pr_data: dict,
+    ticket_id: str,
+    config: dict,
+    external_context: str = "",
+) -> str:
     """Generate PR review using configured engine."""
     try:
         from engines import get_engine, EngineError
@@ -211,7 +374,7 @@ def generate_review(pr_data: dict, ticket_id: str, config: dict) -> str:
 
     try:
         engine = get_engine(engine_name, config)
-        return engine.generate_review(pr_data, ticket_id, prompt_template)
+        return engine.generate_review(pr_data, ticket_id, prompt_template, external_context)
     except EngineError as e:
         print(f"Error: {e}")
         sys.exit(1)
@@ -1118,6 +1281,20 @@ def main():
 Examples:
   wtp --review https://github.com/owner/repo/pull/123
   wtp --review https://bitbucket.org/workspace/repo/pull-requests/456
+
+  # Include external context (private repos, shared libraries)
+  wtp --review <URL> --context /path/to/shared-lib
+  wtp --review <URL> -c /path/to/types -c /path/to/shared-utils
+
+  # Test without calling AI (dry run)
+  wtp --review <URL> --dry-run
+  wtp --review <URL> --context /path/to/lib --dry-run
+
+  # Verbose output (see prompt preview)
+  wtp --review <URL> --verbose
+  wtp --review <URL> -c /path/to/lib -v --dry-run
+
+  # Other commands
   wtp --status
   wtp --switch-engine
   wtp --switch-output
@@ -1182,6 +1359,22 @@ Author:
         "--no-open",
         action="store_true",
         help="Don't auto-open the output file after generation",
+    )
+    parser.add_argument(
+        "--context", "-c",
+        action="append",
+        metavar="PATH",
+        help="Add local file or directory as context (can be used multiple times)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be sent to the AI without actually calling it",
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Show detailed output including context files and prompt preview",
     )
     args = parser.parse_args()
 
@@ -1260,6 +1453,21 @@ Author:
     diff_lines = pr_data["diff"].count("\n")
     print(f"  Diff size: {diff_lines} lines")
 
+    # Handle external context if provided
+    external_context = ""
+    if args.context:
+        print(f"Reading external context...")
+        external_context, context_size = read_context_paths(args.context)
+        if context_size > 0:
+            print(f"  Context size: {context_size / 1024:.1f}KB")
+            # Show files found in verbose mode
+            if args.verbose:
+                file_count = external_context.count("### File:")
+                print(f"  Files included: {file_count}")
+            if not check_context_size(context_size):
+                print("Aborted.")
+                sys.exit(0)
+
     engine_name = config.get("engine", "claude-api")
     try:
         from engines import get_engine
@@ -1267,8 +1475,50 @@ Author:
         engine_label = engine.name
     except Exception:
         engine_label = engine_name
+
+    # Build the prompt for dry-run or verbose display
+    if args.dry_run or args.verbose:
+        prompt_template = load_prompt_template()
+        context_section = external_context if external_context else "No external context provided."
+        full_prompt = prompt_template.format(
+            ticket_id=ticket_id,
+            pr_title=pr_data["title"],
+            pr_url=pr_data.get("pr_url", ""),
+            pr_author=pr_data.get("author", "Unknown"),
+            source_branch=pr_data["source_branch"],
+            target_branch=pr_data["target_branch"],
+            pr_description=pr_data["description"],
+            diff=pr_data["diff"],
+            external_context=context_section,
+        )
+        prompt_size = len(full_prompt.encode('utf-8'))
+
+        if args.verbose:
+            print(f"\n{'=' * 60}")
+            print("PROMPT PREVIEW (first 3000 characters)")
+            print('=' * 60)
+            print(full_prompt[:3000])
+            if len(full_prompt) > 3000:
+                print(f"\n... ({len(full_prompt) - 3000} more characters)")
+            print('=' * 60)
+
+        if args.dry_run:
+            print(f"\n{'=' * 60}")
+            print("DRY RUN - No AI call will be made")
+            print('=' * 60)
+            print(f"Engine: {engine_label}")
+            print(f"Prompt size: {prompt_size:,} bytes ({prompt_size / 1024:.1f}KB)")
+            print(f"Diff lines: {diff_lines}")
+            if args.context:
+                print(f"External context: {context_size / 1024:.1f}KB")
+            else:
+                print(f"External context: None")
+            print('=' * 60)
+            print("\nUse without --dry-run to generate the actual review.")
+            return
+
     print(f"Generating review with {engine_label}...")
-    review = generate_review(pr_data, ticket_id, config)
+    review = generate_review(pr_data, ticket_id, config, external_context)
 
     # Determine output format (CLI arg overrides config)
     output_format = args.format or config.get("output", {}).get("format", "html")

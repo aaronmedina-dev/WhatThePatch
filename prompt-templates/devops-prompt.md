@@ -125,6 +125,12 @@ Example: ### 🔴 Critical: Secrets Exposed in Config
 
 ---
 
+## External Context
+
+{external_context}
+
+---
+
 ## Diff
 
 ```diff
