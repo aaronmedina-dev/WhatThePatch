@@ -628,6 +628,11 @@ def convert_to_html(markdown_content: str, title: str = "PR Review") -> str:
     for pattern, replacement in severity_patterns:
         html_body = re.sub(pattern, replacement, html_body, flags=re.IGNORECASE)
 
+    # Post-process: Convert plain URLs to clickable links
+    # Matches URLs not already inside href="" or wrapped in <a> tags
+    url_pattern = r'(?<!href=["\'])(?<!</a>)(https?://[^\s<>"\']+)'
+    html_body = re.sub(url_pattern, r'<a href="\1">\1</a>', html_body)
+
     # Wrap in full HTML document with styling
     return f"""<!DOCTYPE html>
 <html lang="en">
