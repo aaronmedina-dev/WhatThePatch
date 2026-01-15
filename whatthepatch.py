@@ -883,7 +883,8 @@ def show_status():
     # Ticket extraction
     print(f"\n--- Ticket Extraction ---")
     ticket = config.get("ticket", {})
-    print(f"Pattern: {ticket.get('pattern', '([A-Z]+-\\d+)')}")
+    ticket_pattern = ticket.get('pattern', r'([A-Z]+-\d+)')
+    print(f"Pattern: {ticket_pattern}")
     print(f"Fallback: {ticket.get('fallback', 'NO-TICKET')}")
 
     # Install info
