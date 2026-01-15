@@ -506,6 +506,7 @@ Different roles have different review priorities. WhatThePatch!? includes exampl
 | `devops-prompt.md` | Infrastructure, CI/CD, security, Docker/K8s, secrets, deployment |
 | `frontend-prompt.md` | Accessibility, UX, performance, responsive design, state management |
 | `backend-prompt.md` | API design, database queries, auth, data validation, error handling |
+| `microservices-prompt.md` | AWS Lambda, CDK, serverless patterns, event-driven architecture, observability |
 
 **To use a template:**
 
