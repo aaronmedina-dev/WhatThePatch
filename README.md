@@ -4,6 +4,8 @@
 
 A CLI tool to automatically generate PR reviews using AI. Supports GitHub and Bitbucket pull requests.
 
+![WhatThePatch!? Info Graphic](assets/wtp-info-graphics.jpg)
+
 ## Why This Tool?
 
 Software development has never moved faster. With the evolution of AI-assisted coding, changes are being pushed at unprecedented speed. While this acceleration is exciting, it also presents a challenge: how do we ensure we truly understand the code we're approving?
@@ -63,12 +65,12 @@ This tool is designed for **macOS and Linux**. Here's the compatibility breakdow
 
 | Component | macOS/Linux | Windows |
 |-----------|-------------|---------|
-| Core Python script | Works | Works |
-| AI Engines (API/CLI) | Works | Works |
-| Config/YAML handling | Works | Works |
-| API calls (GitHub/Bitbucket) | Works | Works |
-| CLI installation (`wtp` command) | Works | Not supported |
-| Interactive setup wizard | Works | Partial |
+| Core Python script | ✅ | ✅ |
+| AI Engines (API/CLI) | ✅ | ✅ |
+| Config/YAML handling | ✅ | ✅ |
+| API calls (GitHub/Bitbucket) | ✅ | ✅ |
+| CLI installation (`wtp` command) | ✅ | Not supported |
+| Interactive setup wizard | ✅ | Partial |
 
 ### Windows Users
 
@@ -287,7 +289,7 @@ Use `wtp --switch-output` to change the default format, or `--format` flag for a
 - **MD/TXT files**: Open in your default text editor
 - Disable with `--no-open` flag or set `auto_open: false` in config
 
-### Adding External Context
+### ⭐️ Adding External Context
 
 **This is one of the biggest advantages of a local PR review tool.**
 
