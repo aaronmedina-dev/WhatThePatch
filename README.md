@@ -1,4 +1,10 @@
 ![WhatThePatch!? Banner](assets/wtp_banner.png)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub last commit](https://img.shields.io/github/last-commit/aaronmedina-dev/WhatThePatch)](https://github.com/aaronmedina-dev/WhatThePatch/commits/main)
+[![GitHub issues](https://img.shields.io/github/issues/aaronmedina-dev/WhatThePatch)](https://github.com/aaronmedina-dev/WhatThePatch/issues)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)]()
+
 
 # WhatThePatch!?
 
