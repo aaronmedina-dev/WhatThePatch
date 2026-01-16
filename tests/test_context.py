@@ -4,8 +4,8 @@
 import sys
 from pathlib import Path
 
-# Add current directory to path
-sys.path.insert(0, str(Path(__file__).parent))
+# Add project root directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from whatthepatch import (
     read_context_paths,
@@ -62,11 +62,11 @@ def test_context(paths: list[str]):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python test_context.py <path1> [path2] ...")
+        print("Usage: python tests/test_context.py <path1> [path2] ...")
         print("\nExamples:")
-        print("  python test_context.py ./engines")
-        print("  python test_context.py ./prompt.md ./banner.py")
-        print("  python test_context.py /path/to/external/repo")
+        print("  python tests/test_context.py ./engines")
+        print("  python tests/test_context.py ./prompt.md ./banner.py")
+        print("  python tests/test_context.py /path/to/external/repo")
         sys.exit(1)
 
     test_context(sys.argv[1:])
