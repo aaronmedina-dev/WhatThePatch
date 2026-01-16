@@ -368,10 +368,10 @@ A test script is included for testing context reading independently:
 
 ```bash
 # Test reading a directory
-python tests/test_context.py ./engines
+python test_context.py ./engines
 
 # Test reading multiple paths
-python tests/test_context.py ./banner.py ./prompt.md /path/to/external/repo
+python test_context.py ./banner.py ./prompt.md /path/to/external/repo
 ```
 
 ### CLI Commands
@@ -704,9 +704,10 @@ python setup.py --uninstall
 ```
 
 ## TODOs
-- Add Gemini CLI/API Support
-- handler for duplicate pr-review files
-
+- Add Gemini CLI/API Support?
+- handler for duplicate pr-review files?
+- Notification on new update.
+- Integration with Jira?
 
 ## Author
 
