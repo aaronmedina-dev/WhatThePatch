@@ -1222,19 +1222,72 @@ UPDATABLE_FILES = [
 ]
 
 
-def run_update():
-    """Update WhatThePatch from GitHub."""
-    print("Updating WhatThePatch...\n")
-    print(f"Install directory: {INSTALL_DIR}")
+def _get_git_root(path: Path) -> Path | None:
+    """Get the root directory of the git repository containing path."""
+    current = path
+    while current != current.parent:
+        if (current / ".git").exists():
+            return current
+        current = current.parent
+    return None
+
+
+def _update_via_git(repo_root: Path) -> bool:
+    """Update using git pull. Returns True on success."""
+    import subprocess
+
+    print(f"Repository root: {repo_root}")
     print(f"Source: github.com/{GITHUB_REPO}\n")
 
-    if not INSTALL_DIR.exists():
-        print(f"Error: Install directory not found at {INSTALL_DIR}")
-        print("Please run setup.py first to install WhatThePatch.")
-        sys.exit(1)
+    # Check for uncommitted changes
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        if result.stdout.strip():
+            print("Warning: You have uncommitted changes.")
+            print("Consider committing or stashing them before updating.\n")
+    except Exception:
+        pass
+
+    print("Running git pull...")
+    try:
+        result = subprocess.run(
+            ["git", "pull"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        if result.returncode == 0:
+            print(result.stdout)
+            print("Update complete!")
+            return True
+        else:
+            print(f"Error: {result.stderr}")
+            return False
+    except subprocess.TimeoutExpired:
+        print("Error: git pull timed out")
+        return False
+    except FileNotFoundError:
+        print("Error: git command not found")
+        return False
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
+
+
+def _update_via_download(target_dir: Path) -> bool:
+    """Update by downloading files from GitHub. Returns True on success."""
+    print(f"Target directory: {target_dir}")
+    print(f"Source: github.com/{GITHUB_REPO}\n")
 
     # Ensure engines directory exists
-    engines_dir = INSTALL_DIR / "engines"
+    engines_dir = target_dir / "engines"
     engines_dir.mkdir(parents=True, exist_ok=True)
 
     updated = []
@@ -1242,7 +1295,7 @@ def run_update():
 
     for filename in UPDATABLE_FILES:
         url = f"{GITHUB_RAW_BASE}/{filename}"
-        dest = INSTALL_DIR / filename
+        dest = target_dir / filename
 
         # Ensure parent directory exists for nested files
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -1272,6 +1325,43 @@ def run_update():
 
     if updated and not failed:
         print("\nUpdate complete!")
+        return True
+    return False
+
+
+def run_update():
+    """Update WhatThePatch from GitHub.
+
+    Handles three scenarios:
+    1. Running as CLI (wtp command) from ~/.whatthepatch - download from GitHub
+    2. Running as .py script from a git repo - use git pull
+    3. Running as .py script not in a git repo - download from GitHub to script location
+    """
+    print("Updating WhatThePatch...\n")
+
+    # Determine the script's actual location
+    script_path = Path(__file__).resolve()
+    script_dir = script_path.parent
+
+    # Check if running from installed location (~/.whatthepatch)
+    is_installed = script_dir == INSTALL_DIR
+
+    if is_installed:
+        # Scenario 1: Running as CLI command from install directory
+        print("Mode: Installed CLI (wtp command)\n")
+        _update_via_download(INSTALL_DIR)
+    else:
+        # Running directly as .py script
+        git_root = _get_git_root(script_dir)
+
+        if git_root:
+            # Scenario 2: Running from a git repository
+            print("Mode: Git repository\n")
+            _update_via_git(git_root)
+        else:
+            # Scenario 3: Running as .py script but not in a git repo
+            print("Mode: Standalone script (no git)\n")
+            _update_via_download(script_dir)
 
 
 def main():
