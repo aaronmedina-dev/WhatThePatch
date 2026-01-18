@@ -29,6 +29,25 @@ import requests
 import yaml
 
 from banner import print_banner
+from cli_utils import (
+    console,
+    print_error,
+    print_warning,
+    print_success,
+    print_info,
+    print_panel,
+    print_commands,
+    create_key_value_table,
+    create_status_table,
+    format_status,
+    format_active,
+    format_dim,
+    format_highlight,
+    format_value,
+    get_progress_spinner,
+    confirm,
+)
+from rich.panel import Panel
 
 
 # Install directory for all WhatThePatch files
@@ -674,238 +693,272 @@ def auto_open_file(file_path: Path) -> bool:
 
 def run_config_test() -> bool:
     """Run configuration tests. Returns True if all pass."""
-    print("Testing configuration...\n")
+    console.print()
+    console.print("[bold]Testing configuration...[/bold]\n")
 
     config_path = get_file_path("config.yaml")
     if not config_path.exists():
-        print(f"Error: config.yaml not found at {config_path}")
-        print("Run 'python setup.py' to configure.")
+        print_error(
+            "Config file not found",
+            [f"Expected at: {config_path}", "Run 'python setup.py' to configure."]
+        )
         return False
 
     config = load_config()
-    issues = []  # Track issues for summary
+    results = []  # List of (check_name, passed, details)
+
+    # Test config file
+    results.append(("Config file", True, str(config_path)))
 
     # Test AI engine
     engine_name = config.get("engine", "claude-api")
-    print(f"Engine: {engine_name}")
 
-    try:
-        from engines import get_engine, list_engines, EngineError
+    with get_progress_spinner() as progress:
+        task = progress.add_task(f"Testing {engine_name} engine...", total=None)
 
-        if engine_name not in list_engines():
-            print(f"  Unknown engine. Available: {', '.join(list_engines())}")
-            issues.append(f"Engine '{engine_name}' not found")
-        else:
-            print(f"\nTesting {engine_name} engine...")
-            try:
-                engine = get_engine(engine_name, config)
+        try:
+            from engines import get_engine, list_engines, EngineError
 
-                # Validate configuration
-                is_valid, error = engine.validate_config()
-                if not is_valid:
-                    print(f"  Configuration error: {error}")
-                    issues.append(f"Engine ({engine_name}): {error}")
-                else:
-                    # Test connection
-                    success, error = engine.test_connection()
-                    if success:
-                        print(f"  {engine.name} is working")
+            if engine_name not in list_engines():
+                results.append(("AI Engine", False, f"Unknown engine '{engine_name}'"))
+            else:
+                try:
+                    engine = get_engine(engine_name, config)
+                    is_valid, error = engine.validate_config()
+                    if not is_valid:
+                        results.append(("AI Engine", False, error))
                     else:
-                        print(f"  {engine.name}: {error}")
-                        issues.append(f"Engine ({engine_name}): {error}")
-            except EngineError as e:
-                print(f"  Engine error: {e}")
-                issues.append(f"Engine ({engine_name}): {e}")
-    except ImportError as e:
-        print(f"  Could not load engines: {e}")
-        issues.append(f"Engines module: {e}")
+                        success, error = engine.test_connection()
+                        if success:
+                            results.append(("AI Engine", True, f"{engine_name} ready"))
+                        else:
+                            results.append(("AI Engine", False, error))
+                except EngineError as e:
+                    results.append(("AI Engine", False, str(e)))
+        except ImportError as e:
+            results.append(("AI Engine", False, f"Module error: {e}"))
 
-    # Test GitHub token
-    github_token = config.get("tokens", {}).get("github", "")
-    if github_token:
-        print("\nTesting GitHub token...")
-        try:
-            response = requests.get(
-                "https://api.github.com/user",
-                headers={"Authorization": f"token {github_token}"},
-                timeout=10,
-            )
-            if response.status_code == 200:
-                print("  GitHub token is valid")
-            else:
-                print("  GitHub token is invalid")
-                issues.append("GitHub: Token is invalid or expired")
-        except Exception:
-            print("  GitHub token test failed")
-            issues.append("GitHub: Could not verify token")
+        # Test GitHub token
+        progress.update(task, description="Testing GitHub token...")
+        github_token = config.get("tokens", {}).get("github", "")
+        if github_token:
+            try:
+                response = requests.get(
+                    "https://api.github.com/user",
+                    headers={"Authorization": f"token {github_token}"},
+                    timeout=10,
+                )
+                if response.status_code == 200:
+                    results.append(("GitHub token", True, f"Valid ({github_token[:8]}...)"))
+                else:
+                    results.append(("GitHub token", False, "Invalid or expired"))
+            except Exception:
+                results.append(("GitHub token", False, "Connection failed"))
+        else:
+            results.append(("GitHub token", None, "Not configured"))
+
+        # Test Bitbucket credentials
+        # Note: We use /workspaces endpoint as it works with repository-level permissions
+        # The /user endpoint requires Account:Read which many app passwords don't have
+        progress.update(task, description="Testing Bitbucket credentials...")
+        bb_username = config.get("tokens", {}).get("bitbucket_username", "")
+        bb_password = config.get("tokens", {}).get("bitbucket_app_password", "")
+        if bb_username and bb_password:
+            try:
+                response = requests.get(
+                    "https://api.bitbucket.org/2.0/workspaces",
+                    auth=(bb_username, bb_password),
+                    timeout=10,
+                )
+                if response.status_code == 200:
+                    results.append(("Bitbucket credentials", True, f"Valid ({bb_username})"))
+                elif response.status_code == 401:
+                    results.append(("Bitbucket credentials", False, "Invalid or expired"))
+                else:
+                    # Other errors (403, etc.) - credentials work but may have limited permissions
+                    results.append(("Bitbucket credentials", True, f"Valid ({bb_username}, limited scope)"))
+            except Exception:
+                results.append(("Bitbucket credentials", False, "Connection failed"))
+        else:
+            results.append(("Bitbucket credentials", None, "Not configured"))
+
+        # Test output directory
+        progress.update(task, description="Testing output directory...")
+        output_dir = Path(config.get("output", {}).get("directory", "~/pr-reviews")).expanduser()
+        if output_dir.exists():
+            results.append(("Output directory", True, f"{output_dir}"))
+        else:
+            try:
+                output_dir.mkdir(parents=True, exist_ok=True)
+                results.append(("Output directory", True, f"Created {output_dir}"))
+            except Exception as e:
+                results.append(("Output directory", False, str(e)))
+
+        # Test prompt file
+        progress.update(task, description="Testing prompt template...")
+        prompt_path = get_file_path("prompt.md")
+        if prompt_path.exists():
+            size = prompt_path.stat().st_size
+            results.append(("Prompt template", True, f"{size / 1024:.1f} KB"))
+        else:
+            results.append(("Prompt template", False, "Not found"))
+
+    # Display results table
+    table = create_status_table(["Check", "Status", "Details"])
+    passed = 0
+    failed = 0
+
+    for check, status, details in results:
+        if status is True:
+            status_text = "[green]PASS[/green]"
+            passed += 1
+        elif status is False:
+            status_text = "[red]FAIL[/red]"
+            failed += 1
+        else:
+            status_text = "[dim]SKIP[/dim]"
+        table.add_row(check, status_text, format_dim(details) if details else "")
+
+    console.print(table)
+    console.print()
+
+    if failed == 0:
+        console.print(f"[green]All {passed} checks passed![/green]")
     else:
-        print("\nGitHub token: Not configured (optional)")
+        console.print(f"[yellow]{failed} check(s) failed.[/yellow] Run [cyan]wtp --status[/cyan] for details.")
 
-    # Test Bitbucket credentials
-    bb_username = config.get("tokens", {}).get("bitbucket_username", "")
-    bb_password = config.get("tokens", {}).get("bitbucket_app_password", "")
-    if bb_username and bb_password:
-        print("\nTesting Bitbucket credentials...")
-        try:
-            response = requests.get(
-                "https://api.bitbucket.org/2.0/user",
-                auth=(bb_username, bb_password),
-                timeout=10,
-            )
-            if response.status_code == 200:
-                print("  Bitbucket credentials are valid")
-            else:
-                print("  Bitbucket credentials are invalid")
-                issues.append("Bitbucket: App password is invalid or expired")
-        except Exception:
-            print("  Bitbucket credentials test failed")
-            issues.append("Bitbucket: Could not verify credentials")
-    else:
-        print("\nBitbucket credentials: Not configured (optional)")
-
-    # Summary
-    print("\n" + "=" * 40)
-    if not issues:
-        print("All tests passed")
-    else:
-        print("Issues found:\n")
-        for issue in issues:
-            print(f"  - {issue}")
-        print("\nRun 'python setup.py' to reconfigure.")
-
-    return len(issues) == 0
+    return failed == 0
 
 
 def show_status():
     """Display current configuration status."""
-    print("WhatThePatch - Status\n")
-    print("=" * 50)
+    console.print()
 
     # Check if config exists
     config_path = get_file_path("config.yaml")
     if not config_path.exists():
-        print(f"\nConfig file: NOT FOUND")
-        print(f"  Expected at: {config_path}")
-        print("\nRun 'python setup.py' to configure.")
+        print_error(
+            "Config file not found",
+            [f"Expected at: {config_path}", "Run 'python setup.py' to configure."]
+        )
         return
-
-    print(f"\nConfig file: {config_path}")
 
     config = load_config()
 
-    # Active engine
+    # Active engine panel
     engine_name = config.get("engine", "claude-api")
-    print(f"\n--- Active AI Engine ---")
-    print(f"Engine: {engine_name}")
+    engine_table = create_key_value_table()
 
     try:
         from engines import get_engine, list_engines, EngineError
 
-        # Show available engines
         available = list_engines()
-        print(f"Available engines: {', '.join(available)}")
+        available_display = ", ".join(
+            format_active(e) if e == engine_name else e for e in available
+        )
 
-        # Show engine config
+        engine_table.add_row("Engine", format_value(engine_name, "success"))
+        engine_table.add_row("Available", available_display)
+
         engine_config = config.get("engines", {}).get(engine_name, {})
         if engine_name == "claude-api":
             api_key = engine_config.get("api_key", "")
             if api_key and not api_key.startswith("sk-ant-api03-..."):
-                print(f"API Key: Configured ({api_key[:12]}...)")
+                engine_table.add_row("API Key", f"Configured {format_dim(f'({api_key[:12]}...)')}")
             else:
-                print(f"API Key: Not configured")
-            print(f"Model: {engine_config.get('model', 'claude-sonnet-4-20250514')}")
-            print(f"Max Tokens: {engine_config.get('max_tokens', 4096)}")
+                engine_table.add_row("API Key", format_value("Not configured", "warning"))
+            engine_table.add_row("Model", engine_config.get('model', 'claude-sonnet-4-20250514'))
+            engine_table.add_row("Max Tokens", str(engine_config.get('max_tokens', 4096)))
         elif engine_name == "claude-cli":
             cli_path = engine_config.get("path", "")
-            if cli_path:
-                print(f"CLI Path: {cli_path}")
-            else:
-                print(f"CLI Path: System PATH (default)")
+            engine_table.add_row("CLI Path", cli_path if cli_path else format_dim("System PATH (default)"))
             args = engine_config.get("args", [])
             if args:
-                print(f"Extra Args: {args}")
+                engine_table.add_row("Extra Args", format_highlight(" ".join(args)))
         elif engine_name == "openai-api":
             api_key = engine_config.get("api_key", "")
             if api_key and not api_key.startswith("sk-..."):
-                print(f"API Key: Configured ({api_key[:12]}...)")
+                engine_table.add_row("API Key", f"Configured {format_dim(f'({api_key[:12]}...)')}")
             else:
-                print(f"API Key: Not configured")
-            print(f"Model: {engine_config.get('model', 'gpt-4o')}")
-            print(f"Max Tokens: {engine_config.get('max_tokens', 4096)}")
+                engine_table.add_row("API Key", format_value("Not configured", "warning"))
+            engine_table.add_row("Model", engine_config.get('model', 'gpt-4o'))
+            engine_table.add_row("Max Tokens", str(engine_config.get('max_tokens', 4096)))
         elif engine_name == "openai-codex-cli":
             cli_path = engine_config.get("path", "")
-            if cli_path:
-                print(f"CLI Path: {cli_path}")
-            else:
-                print(f"CLI Path: System PATH (default)")
-            print(f"Model: {engine_config.get('model', 'gpt-5-codex')}")
+            engine_table.add_row("CLI Path", cli_path if cli_path else format_dim("System PATH (default)"))
+            engine_table.add_row("Model", engine_config.get('model', 'gpt-5-codex'))
             api_key = engine_config.get("api_key", "")
             if api_key:
-                print(f"API Key: Configured ({api_key[:12]}...)")
+                engine_table.add_row("API Key", f"Configured {format_dim(f'({api_key[:12]}...)')}")
             else:
-                print(f"API Key: Using ChatGPT sign-in")
+                engine_table.add_row("API Key", format_dim("Using ChatGPT sign-in"))
 
         # Validate engine
         try:
             engine = get_engine(engine_name, config)
             is_valid, error = engine.validate_config()
             if is_valid:
-                print(f"Status: Ready")
+                engine_table.add_row("Status", format_value("Ready", "success"))
             else:
-                print(f"Status: Configuration error - {error}")
+                engine_table.add_row("Status", format_value(f"Error: {error}", "error"))
         except EngineError as e:
-            print(f"Status: Error - {e}")
+            engine_table.add_row("Status", format_value(f"Error: {e}", "error"))
 
     except ImportError as e:
-        print(f"Engines module: NOT LOADED ({e})")
+        engine_table.add_row("Status", format_value(f"Module error: {e}", "error"))
 
-    # Repository access
-    print(f"\n--- Repository Access ---")
+    console.print(Panel(engine_table, title="[bold]AI Engine[/bold]", border_style="green"))
+
+    # Repository access panel
+    repo_table = create_key_value_table()
     tokens = config.get("tokens", {})
 
     github_token = tokens.get("github", "")
     if github_token:
-        print(f"GitHub: Configured ({github_token[:8]}...)")
+        repo_table.add_row("GitHub", f"{format_value('Configured', 'success')} {format_dim(f'({github_token[:8]}...)')}")
     else:
-        print(f"GitHub: Not configured")
+        repo_table.add_row("GitHub", format_value("Not configured", "warning"))
 
     bb_user = tokens.get("bitbucket_username", "")
     bb_pass = tokens.get("bitbucket_app_password", "")
     if bb_user and bb_pass:
-        print(f"Bitbucket: Configured (user: {bb_user})")
+        repo_table.add_row("Bitbucket", f"{format_value('Configured', 'success')} {format_dim(f'({bb_user})')}")
     else:
-        print(f"Bitbucket: Not configured")
+        repo_table.add_row("Bitbucket", format_value("Not configured", "warning"))
 
-    # Output settings
-    print(f"\n--- Output Settings ---")
+    console.print(Panel(repo_table, title="[bold]Repository Access[/bold]", border_style="blue"))
+
+    # Output settings panel
+    output_table = create_key_value_table()
     output = config.get("output", {})
     output_dir = output.get("directory", "~/pr-reviews")
-    print(f"Directory: {output_dir}")
-    print(f"Filename pattern: {output.get('filename_pattern', '{repo}-{pr_number}.md')}")
-    print(f"Format: {output.get('format', 'html')}")
-    print(f"Auto-open: {'Yes' if output.get('auto_open', True) else 'No'}")
+    output_format = output.get('format', 'html').upper()
 
-    # Ticket extraction
-    print(f"\n--- Ticket Extraction ---")
-    ticket = config.get("ticket", {})
-    ticket_pattern = ticket.get('pattern', r'([A-Z]+-\d+)')
-    print(f"Pattern: {ticket_pattern}")
-    print(f"Fallback: {ticket.get('fallback', 'NO-TICKET')}")
+    output_table.add_row("Directory", output_dir)
+    output_table.add_row("Format", format_value(output_format, "magenta"))
+    output_table.add_row("Auto-open", format_value("Yes", "success") if output.get('auto_open', True) else format_dim("No"))
+    output_table.add_row("Pattern", format_dim(output.get('filename_pattern', '{repo}-{pr_number}.md')))
 
-    # Install info
-    print(f"\n--- Installation ---")
-    print(f"Install directory: {INSTALL_DIR}")
+    console.print(Panel(output_table, title="[bold]Output Settings[/bold]", border_style="magenta"))
+
+    # Installation panel
+    install_table = create_key_value_table()
+    install_table.add_row("Config", str(config_path))
+    install_table.add_row("Install Dir", str(INSTALL_DIR))
     if INSTALL_DIR.exists():
-        print(f"Status: Installed")
+        install_table.add_row("Mode", format_value("Installed CLI", "success"))
     else:
-        print(f"Status: Running from source")
+        install_table.add_row("Mode", format_dim("Running from source"))
 
-    print("\n" + "=" * 50)
-    print("\nCommands:")
-    print("  wtp --switch-engine  Switch to a different AI engine")
-    print("  wtp --switch-output  Switch output format (html, md, txt)")
-    print("  wtp --test-config    Run full configuration tests")
-    print("  wtp --edit-prompt    Customize review prompt")
+    console.print(Panel(install_table, title="[bold]Installation[/bold]", border_style="dim"))
+
+    # Quick commands
+    print_commands([
+        ("wtp --switch-engine", "Switch AI engine"),
+        ("wtp --switch-output", "Switch format (html/md/txt)"),
+        ("wtp --test-config", "Test configuration"),
+        ("wtp --edit-prompt", "Customize review prompt"),
+    ])
 
 
 def get_engine_config_status(engine_name: str, config: dict) -> tuple[bool, str]:
@@ -943,14 +996,15 @@ def get_engine_config_status(engine_name: str, config: dict) -> tuple[bool, str]
 
 def switch_engine():
     """Interactive engine switcher."""
-    print("WhatThePatch - Switch Engine\n")
-    print("=" * 50)
+    console.print()
 
     # Check if config exists
     config_path = get_file_path("config.yaml")
     if not config_path.exists():
-        print(f"\nConfig file not found at: {config_path}")
-        print("Run 'python setup.py' to configure first.")
+        print_error(
+            "Config file not found",
+            [f"Expected at: {config_path}", "Run 'python setup.py' to configure."]
+        )
         return
 
     config = load_config()
@@ -960,42 +1014,44 @@ def switch_engine():
         from engines import list_engines
         available_engines = list_engines()
     except ImportError:
-        print("Error: Could not load engines module.")
-        print("Run 'python setup.py' to reinstall.")
+        print_error("Could not load engines module", ["Run 'python setup.py' to reinstall."])
         return
 
-    # Display current engine and all options
-    print(f"\nCurrent engine: {current_engine}")
-    print(f"\nAvailable engines:\n")
-
+    # Build engine status table
     engine_status = {}
+    table = create_status_table(["#", "Engine", "Status", "Details"])
+
     for i, engine_name in enumerate(available_engines, 1):
         is_configured, status_msg = get_engine_config_status(engine_name, config)
         engine_status[engine_name] = is_configured
 
-        active_marker = " (active)" if engine_name == current_engine else ""
-        config_marker = "Ready" if is_configured else "Not configured"
+        # Format engine name
+        if engine_name == current_engine:
+            name_display = format_active(engine_name)
+            status_display = format_value("Active", "success")
+        elif is_configured:
+            name_display = engine_name
+            status_display = format_value("Ready", "success")
+        else:
+            name_display = engine_name
+            status_display = format_value("Not configured", "warning")
 
-        print(f"  {i}. {engine_name}{active_marker}")
-        print(f"     Status: {config_marker} - {status_msg}")
-        print()
+        table.add_row(str(i), name_display, status_display, format_dim(status_msg))
 
-    # Prompt for selection
-    print("-" * 50)
-    print("Enter the number of the engine to switch to,")
-    print("or 's' to set up a new engine, or 'q' to quit.")
-    print()
+    console.print(table)
+    console.print()
+    console.print(format_dim("Enter number to switch, 's' for setup, or 'q' to quit:"))
 
     try:
         while True:
-            choice = input("Your choice: ").strip().lower()
+            choice = console.input("[cyan]> [/cyan]").strip().lower()
 
             if choice == 'q':
-                print("No changes made.")
+                console.print(format_dim("No changes made."))
                 return
 
             if choice == 's':
-                print("\nTo set up a new engine, run: python setup.py")
+                console.print(f"\nRun [cyan]python setup.py[/cyan] to set up a new engine.")
                 return
 
             try:
@@ -1004,34 +1060,29 @@ def switch_engine():
                     selected_engine = available_engines[choice_num - 1]
                     break
                 else:
-                    print(f"Please enter a number between 1 and {len(available_engines)}")
+                    console.print(f"[yellow]Enter a number between 1 and {len(available_engines)}[/yellow]")
             except ValueError:
-                print("Invalid input. Enter a number, 's', or 'q'.")
+                console.print("[yellow]Invalid input. Enter a number, 's', or 'q'.[/yellow]")
 
         # Check if selected engine is configured
         if not engine_status[selected_engine]:
-            print(f"\nWarning: {selected_engine} is not fully configured.")
-            confirm = input("Switch anyway? (y/n): ").strip().lower()
-            if confirm != 'y':
-                print("No changes made.")
+            print_warning(f"{selected_engine} is not fully configured.")
+            if not confirm("Switch anyway?"):
+                console.print(format_dim("No changes made."))
                 return
     except KeyboardInterrupt:
-        print("\n\nCancelled.")
+        console.print(format_dim("\nCancelled."))
         return
 
     # Update config file
     if selected_engine == current_engine:
-        print(f"\n{selected_engine} is already the active engine.")
+        console.print(f"\n{selected_engine} is already the active engine.")
         return
 
     try:
-        # Read the raw config file to preserve formatting/comments
         with open(config_path, 'r') as f:
             config_content = f.read()
 
-        # Replace the engine line
-        # Match: engine: "anything" or engine: 'anything' or engine: anything
-        import re
         new_content = re.sub(
             r'^(engine:\s*)["\']?[\w-]+["\']?\s*$',
             f'engine: "{selected_engine}"',
@@ -1040,8 +1091,6 @@ def switch_engine():
         )
 
         if new_content == config_content:
-            # If regex didn't match, the format might be different
-            # Fall back to full YAML rewrite
             config["engine"] = selected_engine
             with open(config_path, 'w') as f:
                 yaml.dump(config, f, default_flow_style=False, sort_keys=False)
@@ -1049,28 +1098,26 @@ def switch_engine():
             with open(config_path, 'w') as f:
                 f.write(new_content)
 
-        print(f"\nSwitched to: {selected_engine}")
-        print(f"Config updated: {config_path}")
+        print_success(f"Switched to {selected_engine}", {"Config": str(config_path)})
 
         if not engine_status[selected_engine]:
-            print(f"\nRemember to configure {selected_engine} in config.yaml")
-            print("or run 'python setup.py' for guided setup.")
+            console.print(f"\n[yellow]Remember to configure {selected_engine} in config.yaml[/yellow]")
 
     except Exception as e:
-        print(f"\nError updating config: {e}")
-        print("Please update config.yaml manually.")
+        print_error(f"Error updating config: {e}", ["Please update config.yaml manually."])
 
 
 def switch_output():
     """Interactive output format switcher."""
-    print("WhatThePatch - Switch Output Format\n")
-    print("=" * 50)
+    console.print()
 
     # Check if config exists
     config_path = get_file_path("config.yaml")
     if not config_path.exists():
-        print(f"\nConfig file not found at: {config_path}")
-        print("Run 'python setup.py' to configure first.")
+        print_error(
+            "Config file not found",
+            [f"Expected at: {config_path}", "Run 'python setup.py' to configure."]
+        )
         return
 
     config = load_config()
@@ -1082,28 +1129,29 @@ def switch_output():
         ("txt", "Plain text format, opens in default text editor"),
     ]
 
-    # Display current format and all options
-    print(f"\nCurrent format: {current_format}")
-    print(f"\nAvailable formats:\n")
+    # Build format table
+    table = create_status_table(["#", "Format", "Status", "Description"])
 
     for i, (fmt, description) in enumerate(available_formats, 1):
-        active_marker = " (active)" if fmt == current_format else ""
-        print(f"  {i}. {fmt}{active_marker}")
-        print(f"     {description}")
-        print()
+        if fmt == current_format:
+            fmt_display = format_active(fmt.upper())
+            status_display = format_value("Active", "success")
+        else:
+            fmt_display = fmt.upper()
+            status_display = format_dim("Available")
 
-    # Prompt for selection
-    print("-" * 50)
-    print("Enter the number of the format to switch to,")
-    print("or 'q' to quit.")
-    print()
+        table.add_row(str(i), fmt_display, status_display, format_dim(description))
+
+    console.print(table)
+    console.print()
+    console.print(format_dim("Enter number to switch, or 'q' to quit:"))
 
     try:
         while True:
-            choice = input("Your choice: ").strip().lower()
+            choice = console.input("[cyan]> [/cyan]").strip().lower()
 
             if choice == 'q':
-                print("No changes made.")
+                console.print(format_dim("No changes made."))
                 return
 
             try:
@@ -1112,25 +1160,22 @@ def switch_output():
                     selected_format = available_formats[choice_num - 1][0]
                     break
                 else:
-                    print(f"Please enter a number between 1 and {len(available_formats)}")
+                    console.print(f"[yellow]Enter a number between 1 and {len(available_formats)}[/yellow]")
             except ValueError:
-                print("Invalid input. Enter a number or 'q'.")
+                console.print("[yellow]Invalid input. Enter a number or 'q'.[/yellow]")
     except KeyboardInterrupt:
-        print("\n\nCancelled.")
+        console.print(format_dim("\nCancelled."))
         return
 
     # Update config file
     if selected_format == current_format:
-        print(f"\n{selected_format} is already the active format.")
+        console.print(f"\n{selected_format.upper()} is already the active format.")
         return
 
     try:
-        # Read the raw config file to preserve formatting/comments
         with open(config_path, 'r') as f:
             config_content = f.read()
 
-        # Replace the format line under output section
-        # Match: format: "anything" or format: 'anything' or format: anything
         new_content = re.sub(
             r'^(\s*format:\s*)["\']?[\w]+["\']?\s*$',
             f'\\1"{selected_format}"',
@@ -1139,7 +1184,6 @@ def switch_output():
         )
 
         if new_content == config_content:
-            # If regex didn't match, fall back to full YAML rewrite
             if "output" not in config:
                 config["output"] = {}
             config["output"]["format"] = selected_format
@@ -1149,12 +1193,10 @@ def switch_output():
             with open(config_path, 'w') as f:
                 f.write(new_content)
 
-        print(f"\nSwitched to: {selected_format}")
-        print(f"Config updated: {config_path}")
+        print_success(f"Switched to {selected_format.upper()}", {"Config": str(config_path)})
 
     except Exception as e:
-        print(f"\nError updating config: {e}")
-        print("Please update config.yaml manually.")
+        print_error(f"Error updating config: {e}", ["Please update config.yaml manually."])
 
 
 def show_prompt():
@@ -1507,61 +1549,75 @@ Author:
         parser.print_help()
         sys.exit(1)
 
-    print(f"Loading configuration...")
+    console.print()
     config = load_config()
 
-    print(f"Parsing PR URL...")
-    pr_info = parse_pr_url(args.review)
-    print(f"  Platform: {pr_info['platform']}")
-    print(f"  Repository: {pr_info['owner']}/{pr_info['repo']}")
-    print(f"  PR Number: {pr_info['pr_number']}")
+    # Fetch PR data with progress spinner
+    pr_info = None
+    pr_data = None
 
-    print(f"Fetching PR data...")
-    if pr_info["platform"] == "github":
-        pr_data = fetch_github_pr(
-            pr_info["owner"],
-            pr_info["repo"],
-            pr_info["pr_number"],
-            config["tokens"]["github"],
-        )
-    else:
-        pr_data = fetch_bitbucket_pr(
-            pr_info["owner"],
-            pr_info["repo"],
-            pr_info["pr_number"],
-            config["tokens"]["bitbucket_username"],
-            config["tokens"]["bitbucket_app_password"],
-        )
+    with get_progress_spinner() as progress:
+        task = progress.add_task("Parsing PR URL...", total=None)
+        pr_info = parse_pr_url(args.review)
+
+        progress.update(task, description=f"Fetching PR #{pr_info['pr_number']}...")
+        if pr_info["platform"] == "github":
+            pr_data = fetch_github_pr(
+                pr_info["owner"],
+                pr_info["repo"],
+                pr_info["pr_number"],
+                config["tokens"]["github"],
+            )
+        else:
+            pr_data = fetch_bitbucket_pr(
+                pr_info["owner"],
+                pr_info["repo"],
+                pr_info["pr_number"],
+                config["tokens"]["bitbucket_username"],
+                config["tokens"]["bitbucket_app_password"],
+            )
 
     # Add PR URL to data for template
     pr_data["pr_url"] = args.review
-
-    print(f"  Title: {pr_data['title']}")
-    print(f"  Branch: {pr_data['source_branch']} -> {pr_data['target_branch']}")
 
     ticket_id = extract_ticket_id(
         pr_data["source_branch"],
         config["ticket"]["pattern"],
         config["ticket"]["fallback"],
     )
-    print(f"  Ticket ID: {ticket_id}")
 
     diff_lines = pr_data["diff"].count("\n")
-    print(f"  Diff size: {diff_lines} lines")
+    diff_size_kb = len(pr_data["diff"].encode('utf-8')) / 1024
+
+    # Display PR info panel
+    pr_table = create_key_value_table()
+    pr_number = pr_info["pr_number"]
+    pr_table.add_row("PR", f"{format_highlight(f'#{pr_number}')} {pr_data['title']}")
+    pr_table.add_row("Author", pr_data.get("author", "Unknown"))
+    pr_table.add_row("Branch", f"{format_dim(pr_data['source_branch'])} -> {format_dim(pr_data['target_branch'])}")
+    pr_table.add_row("Ticket", format_highlight(ticket_id))
+    pr_table.add_row("Diff", f"{diff_lines} lines ({diff_size_kb:.1f} KB)")
+
+    console.print(Panel(pr_table, title="[bold]Pull Request[/bold]", border_style="cyan"))
 
     # Handle external context if provided
     external_context = ""
+    context_size = 0
     if args.context:
-        print(f"Reading external context...")
-        external_context, context_size = read_context_paths(args.context)
+        with get_progress_spinner() as progress:
+            progress.add_task("Reading external context...", total=None)
+            external_context, context_size = read_context_paths(args.context)
+
         if context_size > 0:
-            print(f"  Context size: {context_size / 1024:.1f}KB")
-            # Show files found in verbose mode
-            if args.verbose:
-                file_count = external_context.count("### File:")
-                print(f"  Files included: {file_count}")
+            file_count = external_context.count("### File:")
+            context_table = create_key_value_table()
+            context_table.add_row("Paths", str(len(args.context)))
+            context_table.add_row("Files", str(file_count))
+            context_table.add_row("Size", f"{context_size / 1024:.1f} KB")
+            console.print(Panel(context_table, title="[bold]External Context[/bold]", border_style="blue"))
+
             if not check_context_size(context_size):
-                print("Aborted.")
+                console.print(format_dim("Aborted."))
                 sys.exit(0)
 
     engine_name = config.get("engine", "claude-api")
@@ -1590,43 +1646,46 @@ Author:
         prompt_size = len(full_prompt.encode('utf-8'))
 
         if args.verbose:
-            print(f"\n{'=' * 60}")
-            print("PROMPT PREVIEW (first 3000 characters)")
-            print('=' * 60)
-            print(full_prompt[:3000])
-            if len(full_prompt) > 3000:
-                print(f"\n... ({len(full_prompt) - 3000} more characters)")
-            print('=' * 60)
+            console.print(Panel(
+                f"{full_prompt[:3000]}{'...' if len(full_prompt) > 3000 else ''}\n\n"
+                f"[dim]({len(full_prompt):,} characters total)[/dim]",
+                title="[bold]Prompt Preview[/bold]",
+                border_style="yellow"
+            ))
 
         if args.dry_run:
-            print(f"\n{'=' * 60}")
-            print("DRY RUN - No AI call will be made")
-            print('=' * 60)
-            print(f"Engine: {engine_label}")
-            print(f"Prompt size: {prompt_size:,} bytes ({prompt_size / 1024:.1f}KB)")
-            print(f"Diff lines: {diff_lines}")
-            if args.context:
-                print(f"External context: {context_size / 1024:.1f}KB")
-            else:
-                print(f"External context: None")
-            print('=' * 60)
-            print("\nUse without --dry-run to generate the actual review.")
+            dry_run_table = create_key_value_table()
+            dry_run_table.add_row("Engine", engine_label)
+            dry_run_table.add_row("Prompt size", f"{prompt_size:,} bytes ({prompt_size / 1024:.1f} KB)")
+            dry_run_table.add_row("Diff lines", str(diff_lines))
+            dry_run_table.add_row("External context", f"{context_size / 1024:.1f} KB" if args.context else "None")
+
+            console.print(Panel(dry_run_table, title="[bold yellow]Dry Run[/bold yellow]", border_style="yellow"))
+            console.print()
+            console.print("[yellow]No API call made.[/yellow] Remove --dry-run to generate review.")
             return
 
-    print(f"Generating review with {engine_label}...")
-    review = generate_review(pr_data, ticket_id, config, external_context)
+    # Generate review with progress spinner
+    review = None
+    with get_progress_spinner() as progress:
+        progress.add_task(f"Generating review with {engine_label}...", total=None)
+        review = generate_review(pr_data, ticket_id, config, external_context)
 
-    # Determine output format (CLI arg overrides config)
+    # Save review
     output_format = args.format or config.get("output", {}).get("format", "html")
-    print(f"Saving review ({output_format} format)...")
-    output_path = save_review(review, pr_info, ticket_id, pr_data, config, output_format)
+    with get_progress_spinner() as progress:
+        progress.add_task(f"Saving review ({output_format})...", total=None)
+        output_path = save_review(review, pr_info, ticket_id, pr_data, config, output_format)
 
-    print(f"\nReview saved to: {output_path}")
+    # Success message
+    print_success("Review complete!", {
+        "Output": str(output_path),
+        "Format": output_format.upper()
+    })
 
-    # Auto-open file if enabled (config default is True, --no-open disables)
+    # Auto-open file if enabled
     auto_open = config.get("output", {}).get("auto_open", True)
     if auto_open and not args.no_open:
-        print(f"Opening file...")
         auto_open_file(output_path)
 
 
@@ -1634,5 +1693,5 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\nOperation cancelled.")
+        console.print(format_dim("\n\nOperation cancelled."))
         sys.exit(0)
