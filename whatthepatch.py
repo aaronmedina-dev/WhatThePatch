@@ -1388,8 +1388,11 @@ def _update_via_git(repo_root: Path) -> bool:
     """Update using git pull. Returns True on success."""
     import subprocess
 
-    print(f"Repository root: {repo_root}")
-    print(f"Source: github.com/{GITHUB_REPO}\n")
+    info_table = create_key_value_table()
+    info_table.add_row("Repository", str(repo_root))
+    info_table.add_row("Source", f"github.com/{GITHUB_REPO}")
+    console.print(info_table)
+    console.print()
 
     # Check for uncommitted changes
     try:
@@ -1401,42 +1404,51 @@ def _update_via_git(repo_root: Path) -> bool:
             timeout=30
         )
         if result.stdout.strip():
-            print("Warning: You have uncommitted changes.")
-            print("Consider committing or stashing them before updating.\n")
+            print_warning("You have uncommitted changes. Consider committing or stashing them before updating.")
+            console.print()
     except Exception:
         pass
 
-    print("Running git pull...")
-    try:
-        result = subprocess.run(
-            ["git", "pull"],
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-            timeout=60
-        )
-        if result.returncode == 0:
-            print(result.stdout)
-            print("Update complete!")
-            return True
-        else:
-            print(f"Error: {result.stderr}")
+    # Run git pull with spinner
+    with get_progress_spinner() as progress:
+        progress.add_task("Running git pull...", total=None)
+        try:
+            result = subprocess.run(
+                ["git", "pull"],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+        except subprocess.TimeoutExpired:
+            print_error("git pull timed out")
             return False
-    except subprocess.TimeoutExpired:
-        print("Error: git pull timed out")
-        return False
-    except FileNotFoundError:
-        print("Error: git command not found")
-        return False
-    except Exception as e:
-        print(f"Error: {e}")
+        except FileNotFoundError:
+            print_error("git command not found")
+            return False
+        except Exception as e:
+            print_error(f"Unexpected error: {e}")
+            return False
+
+    if result.returncode == 0:
+        output = result.stdout.strip()
+        if output:
+            console.print(f"[dim]{output}[/dim]")
+            console.print()
+        print_success("Update complete!")
+        return True
+    else:
+        print_error("git pull failed", [result.stderr.strip()])
         return False
 
 
 def _update_via_download(target_dir: Path) -> bool:
     """Update by downloading files from GitHub. Returns True on success."""
-    print(f"Target directory: {target_dir}")
-    print(f"Source: github.com/{GITHUB_REPO}\n")
+    info_table = create_key_value_table()
+    info_table.add_row("Target", str(target_dir))
+    info_table.add_row("Source", f"github.com/{GITHUB_REPO}")
+    console.print(info_table)
+    console.print()
 
     # Ensure engines directory exists
     engines_dir = target_dir / "engines"
@@ -1445,39 +1457,46 @@ def _update_via_download(target_dir: Path) -> bool:
     updated = []
     failed = []
 
-    for filename in UPDATABLE_FILES:
-        url = f"{GITHUB_RAW_BASE}/{filename}"
-        dest = target_dir / filename
+    with get_progress_spinner() as progress:
+        task = progress.add_task("Downloading files...", total=None)
 
-        # Ensure parent directory exists for nested files
-        dest.parent.mkdir(parents=True, exist_ok=True)
+        for filename in UPDATABLE_FILES:
+            url = f"{GITHUB_RAW_BASE}/{filename}"
+            dest = target_dir / filename
 
-        print(f"Downloading {filename}...", end=" ")
-        try:
-            response = requests.get(url, timeout=30)
-            if response.status_code == 200:
-                dest.write_text(response.text)
-                print("OK")
-                updated.append(filename)
-            else:
-                print(f"FAILED (HTTP {response.status_code})")
-                failed.append(filename)
-        except Exception as e:
-            print(f"FAILED ({e})")
-            failed.append(filename)
+            # Ensure parent directory exists for nested files
+            dest.parent.mkdir(parents=True, exist_ok=True)
 
-    print()
+            progress.update(task, description=f"Downloading {filename}...")
+            try:
+                response = requests.get(url, timeout=30)
+                if response.status_code == 200:
+                    dest.write_text(response.text)
+                    updated.append(filename)
+                else:
+                    failed.append((filename, f"HTTP {response.status_code}"))
+            except Exception as e:
+                failed.append((filename, str(e)))
+
+    # Show results
     if updated:
-        print(f"Updated: {len(updated)} files")
+        console.print(f"[green]Updated:[/green] {len(updated)} files")
     if failed:
-        print(f"Failed: {', '.join(failed)}")
-        print("\nTo update manually:")
-        print(f"  1. Clone the repo: git clone https://github.com/{GITHUB_REPO}")
-        print(f"  2. Run setup.py from the cloned repo")
+        console.print(f"[red]Failed:[/red] {len(failed)} files")
+        for filename, error in failed:
+            console.print(f"  [dim]{filename}:[/dim] [red]{error}[/red]")
+
+    console.print()
 
     if updated and not failed:
-        print("\nUpdate complete!")
+        print_success("Update complete!", {"Files updated": str(len(updated))})
         return True
+    elif failed:
+        print_error("Some files failed to update", [
+            f"Clone manually: git clone https://github.com/{GITHUB_REPO}",
+            "Run setup.py from the cloned repo"
+        ])
+        return False
     return False
 
 
@@ -1489,7 +1508,9 @@ def run_update():
     2. Running as .py script from a git repo - use git pull
     3. Running as .py script not in a git repo - download from GitHub to script location
     """
-    print("Updating WhatThePatch...\n")
+    console.print()
+    console.print("[bold]Updating WhatThePatch[/bold]")
+    console.print()
 
     # Determine the script's actual location
     script_path = Path(__file__).resolve()
@@ -1500,7 +1521,8 @@ def run_update():
 
     if is_installed:
         # Scenario 1: Running as CLI command from install directory
-        print("Mode: Installed CLI (wtp command)\n")
+        console.print(f"[dim]Mode:[/dim] Installed CLI (wtp command)")
+        console.print()
         _update_via_download(INSTALL_DIR)
     else:
         # Running directly as .py script
@@ -1508,11 +1530,13 @@ def run_update():
 
         if git_root:
             # Scenario 2: Running from a git repository
-            print("Mode: Git repository\n")
+            console.print(f"[dim]Mode:[/dim] Git repository")
+            console.print()
             _update_via_git(git_root)
         else:
             # Scenario 3: Running as .py script but not in a git repo
-            print("Mode: Standalone script (no git)\n")
+            console.print(f"[dim]Mode:[/dim] Standalone script")
+            console.print()
             _update_via_download(script_dir)
 
     # Clear update cache so next check fetches fresh data
