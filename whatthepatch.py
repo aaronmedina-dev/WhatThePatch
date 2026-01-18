@@ -14,7 +14,11 @@ Example:
     wtp --review https://bitbucket.org/workspace/repo/pull-requests/456
 """
 
+__version__ = "1.0.0"
+
 import argparse
+import json
+import time
 import os
 import platform
 import re
@@ -96,6 +100,111 @@ def get_file_path(filename: str) -> Path:
         return script_path
 
     return install_path  # Return install path for error messages
+
+
+# Update check configuration
+GITHUB_REPO = "aaronmedina-dev/WhatThePatch"
+UPDATE_CHECK_INTERVAL = 86400  # 24 hours in seconds
+UPDATE_CACHE_FILE = Path.home() / ".config" / "whatthepatch" / "update_cache.json"
+
+
+def get_update_cache() -> dict:
+    """Load the update cache from disk."""
+    try:
+        if UPDATE_CACHE_FILE.exists():
+            with open(UPDATE_CACHE_FILE, 'r') as f:
+                return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        pass
+    return {}
+
+
+def save_update_cache(cache: dict) -> None:
+    """Save the update cache to disk."""
+    try:
+        UPDATE_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(UPDATE_CACHE_FILE, 'w') as f:
+            json.dump(cache, f)
+    except IOError:
+        pass  # Silently fail if we can't write cache
+
+
+def parse_version(version_str: str) -> tuple:
+    """Parse version string into comparable tuple. Handles 'v' prefix."""
+    version_str = version_str.lstrip('v')
+    try:
+        parts = version_str.split('.')
+        return tuple(int(p) for p in parts)
+    except (ValueError, AttributeError):
+        return (0, 0, 0)
+
+
+def check_for_updates() -> tuple[bool, str, str] | None:
+    """
+    Check if a new version is available.
+
+    Returns:
+        Tuple of (update_available, current_version, latest_version) or None if check skipped/failed.
+    """
+    cache = get_update_cache()
+    current_time = time.time()
+
+    # Check if we should skip (checked recently)
+    last_check = cache.get("last_check", 0)
+    if current_time - last_check < UPDATE_CHECK_INTERVAL:
+        # Use cached result if available
+        cached_latest = cache.get("latest_version")
+        if cached_latest:
+            current = parse_version(__version__)
+            latest = parse_version(cached_latest)
+            if latest > current:
+                return (True, __version__, cached_latest)
+        return None
+
+    # Fetch latest release from GitHub
+    try:
+        response = requests.get(
+            f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest",
+            timeout=5,
+            headers={"Accept": "application/vnd.github.v3+json"}
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            latest_version = data.get("tag_name", "").lstrip('v')
+
+            # Update cache
+            cache["last_check"] = current_time
+            cache["latest_version"] = latest_version
+            save_update_cache(cache)
+
+            # Compare versions
+            current = parse_version(__version__)
+            latest = parse_version(latest_version)
+
+            if latest > current:
+                return (True, __version__, latest_version)
+            return (False, __version__, latest_version)
+
+        elif response.status_code == 404:
+            # No releases yet - update cache to avoid repeated checks
+            cache["last_check"] = current_time
+            cache["latest_version"] = __version__
+            save_update_cache(cache)
+
+    except (requests.RequestException, json.JSONDecodeError):
+        pass  # Silently fail on network errors
+
+    return None
+
+
+def show_update_notification() -> None:
+    """Check for updates and display notification if available."""
+    result = check_for_updates()
+    if result and result[0]:  # update_available is True
+        _, current, latest = result
+        console.print()
+        console.print(f"[yellow]Update available:[/yellow] v{current} -> v{latest}  [dim]Run[/dim] [cyan]wtp --update[/cyan] [dim]to upgrade[/dim]")
 
 
 def is_text_file(filepath: Path) -> bool:
@@ -943,6 +1052,7 @@ def show_status():
 
     # Installation panel
     install_table = create_key_value_table()
+    install_table.add_row("Version", f"v{__version__}")
     install_table.add_row("Config", str(config_path))
     install_table.add_row("Install Dir", str(INSTALL_DIR))
     if INSTALL_DIR.exists():
@@ -1448,6 +1558,11 @@ Author:
 """,
     )
     parser.add_argument(
+        "--version", "-V",
+        action="version",
+        version=f"%(prog)s v{__version__}",
+    )
+    parser.add_argument(
         "--review", "-r",
         metavar="URL",
         help="URL of the pull request to review",
@@ -1531,18 +1646,22 @@ Author:
 
     if args.status:
         show_status()
+        show_update_notification()
         return
 
     if args.switch_engine:
         switch_engine()
+        show_update_notification()
         return
 
     if args.switch_output:
         switch_output()
+        show_update_notification()
         return
 
     if args.test_config:
         success = run_config_test()
+        show_update_notification()
         sys.exit(0 if success else 1)
 
     if not args.review:
@@ -1687,6 +1806,9 @@ Author:
     auto_open = config.get("output", {}).get("auto_open", True)
     if auto_open and not args.no_open:
         auto_open_file(output_path)
+
+    # Check for updates
+    show_update_notification()
 
 
 if __name__ == "__main__":
