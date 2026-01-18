@@ -1515,6 +1515,13 @@ def run_update():
             print("Mode: Standalone script (no git)\n")
             _update_via_download(script_dir)
 
+    # Clear update cache so next check fetches fresh data
+    if UPDATE_CACHE_FILE.exists():
+        try:
+            UPDATE_CACHE_FILE.unlink()
+        except IOError:
+            pass
+
 
 def main():
     # Show banner for help
