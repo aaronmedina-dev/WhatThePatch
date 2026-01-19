@@ -10,8 +10,6 @@
 
 A CLI tool to automatically generate PR reviews using AI. Supports GitHub and Bitbucket pull requests.
 
-![WhatThePatch!? Info Graphic](assets/wtp-info-graphics.jpg)
-
 ## Why This Tool?
 
 Software development has never moved faster. With the evolution of AI-assisted coding, changes are being pushed at unprecedented speed. While this acceleration is exciting, it also presents a challenge: how do we ensure we truly understand the code we're approving?
@@ -42,8 +40,7 @@ There are several AI-powered PR review tools available. Here's how WhatThePatch!
 - You want **full control** over how reviews are conducted
 - You're working with **multiple repo providers** and/or accounts
 - You prefer **local archives** of all reviews
-- You're already paying for **Claude API, OpenAI API, or CLI tools**
-- **Privacy matters** - you don't want code on additional third-party servers
+- You're already paying for **Claude API, OpenAI API, Gemini, or CLI tools**
 - **Customize review criteria** to match your job role, tech stack, and team's or organisation standards
 - Your PRs **reference external private repositories** that cloud tools can't access
 
@@ -705,6 +702,7 @@ python setup.py --uninstall
 
 ## TODOs
 - Add Gemini CLI/API Support?
+- external context
 - handler for duplicate pr-review files?
 - Notification on new update.
 - Integration with Jira?
