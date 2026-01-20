@@ -14,6 +14,8 @@ Example:
     wtp --review https://bitbucket.org/workspace/repo/pull-requests/456
 """
 
+from __future__ import annotations
+
 __version__ = "1.0.1"
 
 import argparse
