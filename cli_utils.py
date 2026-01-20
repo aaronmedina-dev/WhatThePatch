@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """CLI utilities using Rich for formatted output."""
 
+from __future__ import annotations
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
