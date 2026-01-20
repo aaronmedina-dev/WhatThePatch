@@ -705,7 +705,7 @@ python setup.py --uninstall
 - external context
 - handler for duplicate pr-review files?
 - Notification on new update.
-- Integration with Jira?
+- Add escape to interrupt/ label to ctrl+c to cancel operation
 
 ## Author
 
