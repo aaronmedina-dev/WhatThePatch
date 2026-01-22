@@ -44,6 +44,23 @@ def print_error(message: str, details: list[str] | None = None):
     console.print(Panel(content, title="[bold red]Error[/bold red]", border_style="red"))
 
 
+def print_cli_error(message: str, hints: list[str] | None = None):
+    """Print a lightweight CLI error message (no panel).
+
+    Consistent with argparse error styling:
+    - Bold red "Error:" prefix
+    - Message text
+    - Optional hints in dim text
+    """
+    console.print()
+    console.print(f"[bold red]Error:[/bold red] {message}")
+    if hints:
+        console.print()
+        for hint in hints:
+            console.print(f"  [dim]{hint}[/dim]")
+    console.print()
+
+
 def print_warning(message: str):
     """Print a warning message in a yellow panel."""
     console.print(Panel(f"[yellow]{message}[/yellow]", title="[bold yellow]Warning[/bold yellow]", border_style="yellow"))
