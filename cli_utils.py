@@ -7,10 +7,33 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.spinner import SPINNERS
 from rich import box
 
 # Global console instance
 console = Console()
+
+# Register custom WTP spinner
+# Cycles through circle/dot characters with fire gradient (yellow -> orange -> red)
+# Colors match banner.py: yellow=93m, orange=38;5;208, red=91m
+YELLOW = "\033[1;93m"
+ORANGE = "\033[1;38;5;208m"
+RED = "\033[1;91m"
+RST = "\033[0m"
+
+SPINNERS["wtp"] = {
+    "frames": [
+        f"{YELLOW}●{RST}",
+        f"{YELLOW}◉{RST}",
+        f"{ORANGE}○{RST}",
+        f"{ORANGE}◌{RST}",
+        f"{RED}⁘{RST}",
+        f"{RED}⁙{RST}",
+        f"{ORANGE}※{RST}",
+        f"{YELLOW}⁜{RST}",
+    ],
+    "interval": 120,
+}
 
 
 def print_error(message: str, details: list[str] | None = None):
@@ -105,9 +128,9 @@ def format_value(text: str, style: str = "default") -> str:
 
 
 def get_progress_spinner():
-    """Get a progress spinner context manager."""
+    """Get a progress spinner context manager with custom WTP! branding."""
     return Progress(
-        SpinnerColumn(),
+        SpinnerColumn(spinner_name="wtp"),
         TextColumn("[progress.description]{task.description}"),
         console=console,
         transient=True,
