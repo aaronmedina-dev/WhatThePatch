@@ -40,7 +40,7 @@ There are several AI-powered PR review tools available. Here's how WhatThePatch!
 - You want **full control** over how reviews are conducted
 - You're working with **multiple repo providers** and/or accounts
 - You prefer **local archives** of all reviews
-- You're already paying for **Claude API, OpenAI API, Gemini, or CLI tools**
+- You're already paying for **Claude API, OpenAI API, Google Gemini API, or CLI tools**
 - **Customize review criteria** to match your job role, tech stack, and team's or organisation standards
 - Your PRs **reference external private repositories** that cloud tools can't access
 
@@ -54,12 +54,14 @@ If you prefer SaaS solutions that comment directly on PRs:
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.9+
 - One of the following for AI access:
   - Anthropic API key (for Claude), OR
   - Claude Code CLI installed and authenticated, OR
   - OpenAI API key (for GPT-4o), OR
-  - OpenAI Codex CLI installed and authenticated
+  - OpenAI Codex CLI installed and authenticated, OR
+  - Google AI API key (for Gemini), OR
+  - Google Gemini CLI installed and authenticated
 - GitHub token (for GitHub PRs) and/or Bitbucket app password (for Bitbucket PRs)
 
 ## Platform Support
@@ -220,6 +222,53 @@ engines:
 - OpenAI Codex CLI installed: `npm install -g @openai/codex`
 - ChatGPT Plus, Pro, Business, Edu, or Enterprise subscription
 - Run `codex` once to sign in with your ChatGPT account
+
+#### Option E: Google Gemini API
+
+Uses the Google Generative AI SDK directly. Supports Gemini 2.0 Flash and other models.
+
+```yaml
+engine: "gemini-api"
+
+engines:
+  gemini-api:
+    api_key: "AIza..."
+    model: "gemini-2.0-flash"
+    max_tokens: 4096
+```
+
+**Pros:**
+- Access to Gemini 2.0 Flash and other Google AI models
+- Competitive pricing
+- Fast response times
+
+**Requirements:**
+- Google AI API key from https://aistudio.google.com/app/apikey
+- API billing (pay-per-use)
+
+#### Option F: Google Gemini CLI
+
+Uses your existing Gemini CLI installation. Great for users with Google Cloud authentication.
+
+```yaml
+engine: "gemini-cli"
+
+engines:
+  gemini-cli:
+    path: ""  # Leave empty to use system PATH
+    model: "gemini-2.0-flash"
+    api_key: ""  # Optional, uses Google auth by default
+```
+
+**Pros:**
+- Uses existing Google authentication
+- Can use Google Cloud billing
+- No separate API key needed if using `gemini auth`
+
+**Requirements:**
+- Gemini CLI installed from: https://github.com/google-gemini/gemini-cli
+- Google account with AI access
+- Run `gemini auth` to sign in, or set `GEMINI_API_KEY` environment variable
 
 ### 4. Configure repository access
 
@@ -414,7 +463,7 @@ See `config.example.yaml` for all available options:
 
 | Setting | Description |
 |---------|-------------|
-| `engine` | Active engine: `"claude-api"`, `"claude-cli"`, `"openai-api"`, or `"openai-codex-cli"` |
+| `engine` | Active engine: `"claude-api"`, `"claude-cli"`, `"openai-api"`, `"openai-codex-cli"`, `"gemini-api"`, or `"gemini-cli"` |
 
 ### Engine-Specific Configuration
 
@@ -448,6 +497,22 @@ See `config.example.yaml` for all available options:
 | `path` | Path to codex executable (leave empty for system PATH) |
 | `model` | Model to use (default: `gpt-5-codex`) |
 | `api_key` | Optional API key (uses ChatGPT sign-in if empty) |
+
+**Gemini API (`engines.gemini-api`)**
+
+| Setting | Description |
+|---------|-------------|
+| `api_key` | Google AI API key (required) |
+| `model` | Gemini model to use (default: `gemini-2.0-flash`) |
+| `max_tokens` | Max response length (default: `4096`) |
+
+**Gemini CLI (`engines.gemini-cli`)**
+
+| Setting | Description |
+|---------|-------------|
+| `path` | Path to gemini executable (leave empty for system PATH) |
+| `model` | Model to use (default: `gemini-2.0-flash`) |
+| `api_key` | Optional API key (uses Google auth or GEMINI_API_KEY if empty) |
 
 ### Repository Access Tokens
 
@@ -677,11 +742,22 @@ Run: `pip install anthropic`
 
 Run: `pip install openai`
 
+### "google-generativeai package not installed"
+
+Run: `pip install google-generativeai`
+
 ### "claude command not found"
 
 Either:
 1. Install Claude Code: https://claude.ai/code
 2. Or set the full path in config under `engines.claude-cli.path: "/path/to/claude"`
+
+### "gemini command not found"
+
+Either:
+1. Install Gemini CLI from: https://github.com/google-gemini/gemini-cli
+2. Or set the full path in config under `engines.gemini-cli.path: "/path/to/gemini"`
+3. After installation, run `gemini auth` to authenticate or set `GEMINI_API_KEY`
 
 ### Test your configuration
 
@@ -701,11 +777,11 @@ python setup.py --uninstall
 ```
 
 ## TODOs
-- Add Gemini CLI/API Support?
 - external context
 - handler for duplicate pr-review files?
 - Notification on new update.
 - Add escape to interrupt/ label to ctrl+c to cancel operation
+- Add Ollama support for local models
 
 ## Author
 

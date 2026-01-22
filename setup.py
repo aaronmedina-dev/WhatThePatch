@@ -228,6 +228,73 @@ def test_openai_api_key(api_key: str) -> bool:
         return False
 
 
+def test_gemini_api_key(api_key: str) -> bool:
+    """Test if a Google AI API key is valid."""
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        model.generate_content("Hi")
+        return True
+    except ImportError:
+        print("google-generativeai package not installed. Run: pip install google-generativeai")
+        return False
+    except Exception as e:
+        print(f"Error testing Gemini API key: {e}")
+        return False
+
+
+def check_gemini_cli() -> bool:
+    """Check if Gemini CLI is installed and accessible."""
+    gemini_path = shutil.which("gemini")
+    if gemini_path:
+        try:
+            result = subprocess.run(
+                ["gemini", "--version"],
+                capture_output=True,
+                text=True,
+            )
+            version = result.stdout.strip() or result.stderr.strip()
+            print(f"Gemini CLI found: {gemini_path}")
+            if version:
+                print(f"Version: {version}")
+            return True
+        except Exception:
+            pass
+    return False
+
+
+def test_gemini_cli() -> bool:
+    """Test Gemini CLI with a simple prompt."""
+    try:
+        result = subprocess.run(
+            ["gemini", "-p", "Say 'test successful'"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+        if result.returncode == 0:
+            return True
+
+        # Check for common errors
+        output = result.stdout + result.stderr
+        if "authentication" in output.lower() or "unauthorized" in output.lower():
+            print("Error: Gemini CLI authentication issue. Run 'gemini auth' to sign in.")
+        elif "api key" in output.lower():
+            print("Error: Invalid or missing API key. Set GEMINI_API_KEY or run 'gemini auth'.")
+        else:
+            print(f"Error: {output[:200]}")
+        return False
+
+    except subprocess.TimeoutExpired:
+        print("Error: Gemini CLI timed out")
+        return False
+    except Exception as e:
+        print(f"Error testing Gemini CLI: {e}")
+        return False
+
+
 def test_github_token(token: str) -> bool:
     """Test if a GitHub token is valid."""
     try:
@@ -331,10 +398,12 @@ def create_config():
             "claude-cli - Claude Code CLI (uses your existing auth)",
             "openai-api - OpenAI API (requires API key)",
             "openai-codex-cli - OpenAI Codex CLI (uses your ChatGPT auth)",
+            "gemini-api - Google Gemini API (requires API key)",
+            "gemini-cli - Google Gemini CLI (uses your existing Google auth)",
         ],
         default=1,
     )
-    engine_names = ["claude-api", "claude-cli", "openai-api", "openai-codex-cli"]
+    engine_names = ["claude-api", "claude-cli", "openai-api", "openai-codex-cli", "gemini-api", "gemini-cli"]
     config["engine"] = engine_names[engine_choice]
 
     # Initialize engines section
@@ -358,6 +427,16 @@ def create_config():
             "model": "gpt-5-codex",
             "api_key": "",
         },
+        "gemini-api": {
+            "api_key": "",
+            "model": "gemini-2.0-flash",
+            "max_tokens": 4096,
+        },
+        "gemini-cli": {
+            "path": "",
+            "model": "gemini-2.0-flash",
+            "api_key": "",
+        },
     }
 
     # Configure API key based on selected engine
@@ -377,6 +456,18 @@ def create_config():
         if prompt_yes_no("Configure an API key instead?", default=False):
             api_key = prompt("Enter your OpenAI API key")
             config["engines"]["openai-codex-cli"]["api_key"] = api_key
+    elif config["engine"] == "gemini-api":
+        print("\nGoogle AI API Key (required)")
+        print("Get yours at: https://aistudio.google.com/app/apikey")
+        api_key = prompt("Enter your Google AI API key")
+        config["engines"]["gemini-api"]["api_key"] = api_key
+    elif config["engine"] == "gemini-cli":
+        print("\nGemini CLI will use your existing Google authentication.")
+        print("Install from: https://github.com/google-gemini/gemini-cli")
+        print("Make sure you've run 'gemini auth' or set GEMINI_API_KEY.")
+        if prompt_yes_no("Configure an API key instead?", default=False):
+            api_key = prompt("Enter your Google AI API key")
+            config["engines"]["gemini-cli"]["api_key"] = api_key
     else:
         print("\nClaude CLI will use your existing authentication.")
         if prompt_yes_no("Configure an Anthropic API key as backup?", default=False):
@@ -497,6 +588,29 @@ def run_tests():
                 all_passed = False
         else:
             print("  Codex CLI not found. Install with: npm install -g @openai/codex")
+            all_passed = False
+    elif engine == "gemini-api":
+        print("\nTesting Google AI API key...")
+        api_key = config.get("engines", {}).get("gemini-api", {}).get("api_key", "")
+        if api_key and not api_key.startswith("AIza..."):
+            if test_gemini_api_key(api_key):
+                print("  API key is valid")
+            else:
+                print("  API key is INVALID")
+                all_passed = False
+        else:
+            print("  No API key configured")
+            all_passed = False
+    elif engine == "gemini-cli":
+        print("\nTesting Gemini CLI...")
+        if check_gemini_cli():
+            if test_gemini_cli():
+                print("  Gemini CLI is working")
+            else:
+                print("  Gemini CLI test FAILED")
+                all_passed = False
+        else:
+            print("  Gemini CLI not found. Install from: https://github.com/google-gemini/gemini-cli")
             all_passed = False
     else:
         print(f"\nUnknown engine: {engine}")

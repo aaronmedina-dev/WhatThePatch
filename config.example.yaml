@@ -7,7 +7,9 @@
 #   - "claude-cli": Claude Code CLI (uses your existing team auth)
 #   - "openai-api": OpenAI API (requires API key)
 #   - "openai-codex-cli": OpenAI Codex CLI (uses your existing ChatGPT auth)
-# Future engines: "gemini", "ollama"
+#   - "gemini-api": Google Gemini API (requires API key)
+#   - "gemini-cli": Google Gemini CLI (uses your existing Google auth)
+# Future engines: "ollama"
 engine: "claude-api"
 
 # Engine-specific configurations
@@ -41,10 +43,20 @@ engines:
     # Optional API key (can also use CODEX_API_KEY env var or ChatGPT sign-in)
     api_key: ""
 
-  # Google Gemini settings (future)
-  # gemini:
-  #   api_key: "..."
-  #   model: "gemini-pro"
+  # Google Gemini API settings
+  gemini-api:
+    api_key: "AIza..."
+    model: "gemini-2.0-flash"
+    max_tokens: 4096
+
+  # Google Gemini CLI settings
+  gemini-cli:
+    # Path to gemini executable (leave empty to use system PATH)
+    path: ""
+    # Model to use (default: gemini-2.0-flash)
+    model: "gemini-2.0-flash"
+    # Optional API key (can also use GEMINI_API_KEY env var or Google Cloud auth)
+    api_key: ""
 
   # Ollama local models (future)
   # ollama:
