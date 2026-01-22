@@ -760,11 +760,17 @@ def convert_to_html(markdown_content: str, title: str = "PR Review") -> str:
     # Post-process: Convert severity labels to styled badges
     # Matches patterns like: <h3>🔴 Critical: Issue Title</h3>
     severity_patterns = [
+        # Unicode emoji format
         (r'(<h3>)\s*🔴\s*Critical:', r'\1<span class="severity-badge severity-critical">Critical</span>'),
         (r'(<h3>)\s*🟠\s*High:', r'\1<span class="severity-badge severity-high">High</span>'),
         (r'(<h3>)\s*🟡\s*Medium:', r'\1<span class="severity-badge severity-medium">Medium</span>'),
         (r'(<h3>)\s*🟢\s*Low:', r'\1<span class="severity-badge severity-low">Low</span>'),
-        # Also handle without emoji (fallback)
+        # Markdown emoji shortcode format (AI sometimes outputs these)
+        (r'(<h3>)\s*:red_circle:\s*Critical:', r'\1<span class="severity-badge severity-critical">Critical</span>'),
+        (r'(<h3>)\s*:orange_circle:\s*High:', r'\1<span class="severity-badge severity-high">High</span>'),
+        (r'(<h3>)\s*:yellow_circle:\s*Medium:', r'\1<span class="severity-badge severity-medium">Medium</span>'),
+        (r'(<h3>)\s*:green_circle:\s*Low:', r'\1<span class="severity-badge severity-low">Low</span>'),
+        # Fallback without emoji
         (r'(<h3>)\s*Critical:', r'\1<span class="severity-badge severity-critical">Critical</span>'),
         (r'(<h3>)\s*High:', r'\1<span class="severity-badge severity-high">High</span>'),
         (r'(<h3>)\s*Medium:', r'\1<span class="severity-badge severity-medium">Medium</span>'),
