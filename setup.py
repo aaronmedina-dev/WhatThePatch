@@ -33,6 +33,7 @@ INSTALL_FILES = [
     "whatthepatch.py",
     "prompt.md",
     "banner.py",
+    "cli_utils.py",
 ]
 
 # Directories to copy to install directory
