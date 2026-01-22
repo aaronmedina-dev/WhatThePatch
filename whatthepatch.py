@@ -1247,7 +1247,11 @@ def get_available_models(engine_name: str, config: dict) -> list[str]:
             "claude-3-5-sonnet-20241022",
             "claude-3-5-haiku-20241022",
         ],
-        "claude-cli": [],  # No model selection - uses CLI's configured model
+        "claude-cli": [
+            "opus",
+            "sonnet",
+            "haiku",
+        ],
         "openai-api": [
             "gpt-4o",
             "gpt-4o-mini",
@@ -1507,14 +1511,8 @@ def switch_model():
     available_models = get_available_models(current_engine, config)
 
     if not available_models:
-        if current_engine == "claude-cli":
-            console.print(f"[yellow]Claude CLI uses its own model configuration.[/yellow]")
-            console.print(f"\nTo change the model, add it to your config.yaml under engines.claude-cli.args:")
-            console.print(f'  args: ["--model", "opus"]')
-            console.print(f"\nOr configure the model in your Claude CLI settings.")
-        else:
-            print_warning(f"No model options available for {current_engine}")
-            console.print(f"\nYou can add models to config.yaml under engines.{current_engine}.available_models")
+        print_warning(f"No model options available for {current_engine}")
+        console.print(f"\nYou can add models to config.yaml under engines.{current_engine}.available_models")
         return
 
     console.print(f"[bold]Select model for {current_engine}[/bold]")
@@ -1578,31 +1576,42 @@ def switch_model():
         return
 
     try:
-        with open(config_path, 'r') as f:
-            config_content = f.read()
-
-        # Try to update the model in the specific engine section
-        # Pattern: find the engine section and update its model line
-        engine_section_pattern = rf'(^\s*{re.escape(current_engine)}:\s*\n(?:.*\n)*?)(^\s*model:\s*)["\']?[^"\'\n]+["\']?(\s*$)'
-        new_content = re.sub(
-            engine_section_pattern,
-            rf'\g<1>\g<2>"{selected_model}"\3',
-            config_content,
-            flags=re.MULTILINE
-        )
-
-        if new_content == config_content:
-            # Regex didn't match, update via YAML
+        # Handle claude-cli specially - it uses args: ["--model", "..."] format
+        if current_engine == "claude-cli":
             if "engines" not in config:
                 config["engines"] = {}
-            if current_engine not in config["engines"]:
-                config["engines"][current_engine] = {}
-            config["engines"][current_engine]["model"] = selected_model
+            if "claude-cli" not in config["engines"]:
+                config["engines"]["claude-cli"] = {}
+            config["engines"]["claude-cli"]["args"] = ["--model", selected_model]
             with open(config_path, 'w') as f:
                 yaml.dump(config, f, default_flow_style=False, sort_keys=False)
         else:
-            with open(config_path, 'w') as f:
-                f.write(new_content)
+            # Standard model key update for other engines
+            with open(config_path, 'r') as f:
+                config_content = f.read()
+
+            # Try to update the model in the specific engine section
+            # Pattern: find the engine section and update its model line
+            engine_section_pattern = rf'(^\s*{re.escape(current_engine)}:\s*\n(?:.*\n)*?)(^\s*model:\s*)["\']?[^"\'\n]+["\']?(\s*$)'
+            new_content = re.sub(
+                engine_section_pattern,
+                rf'\g<1>\g<2>"{selected_model}"\3',
+                config_content,
+                flags=re.MULTILINE
+            )
+
+            if new_content == config_content:
+                # Regex didn't match, update via YAML
+                if "engines" not in config:
+                    config["engines"] = {}
+                if current_engine not in config["engines"]:
+                    config["engines"][current_engine] = {}
+                config["engines"][current_engine]["model"] = selected_model
+                with open(config_path, 'w') as f:
+                    yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+            else:
+                with open(config_path, 'w') as f:
+                    f.write(new_content)
 
         print_success(f"Switched {current_engine} to {selected_model}", {"Config": str(config_path)})
 

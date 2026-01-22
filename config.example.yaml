@@ -32,8 +32,14 @@ engines:
     # Path to claude executable (leave empty to use system PATH)
     path: ""
     # Additional arguments to pass to claude command
-    # Example: ["--model", "opus"]
+    # Use --switch-model to change, or set manually: ["--model", "opus"]
     args: []
+    # Available models for --switch-model (customize this list as needed)
+    # These are short names used by Claude CLI (opus, sonnet, haiku)
+    available_models:
+      - "opus"
+      - "sonnet"
+      - "haiku"
 
   # OpenAI API settings
   openai-api:

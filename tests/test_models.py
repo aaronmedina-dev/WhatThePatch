@@ -127,10 +127,13 @@ class TestGetAvailableModels:
         assert isinstance(result, list)
         assert "gemini-2.0-flash" in result
 
-    def test_claude_cli_returns_empty_list(self, mock_config_empty):
-        """Claude CLI should return empty list (no model selection)."""
+    def test_claude_cli_returns_default_models(self, mock_config_empty):
+        """Claude CLI should return default model list (opus, sonnet, haiku)."""
         result = get_available_models("claude-cli", mock_config_empty)
-        assert result == []
+        assert isinstance(result, list)
+        assert len(result) > 0
+        assert "opus" in result
+        assert "sonnet" in result
 
     def test_returns_empty_for_unknown_engine(self, mock_config_empty):
         """Should return empty list for unknown engine."""
