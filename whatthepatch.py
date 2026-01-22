@@ -349,8 +349,11 @@ def load_prompt_template() -> str:
     prompt_path = get_file_path("prompt.md")
 
     if not prompt_path.exists():
-        print(f"Error: prompt.md not found at {prompt_path}")
-        print("Please run setup.py to install WhatThePatch.")
+        from cli_utils import print_cli_error
+        print_cli_error(
+            f"prompt.md not found at [yellow]{prompt_path}[/yellow]",
+            hints=["Run setup.py to install WhatThePatch."]
+        )
         sys.exit(1)
 
     return prompt_path.read_text()
@@ -361,8 +364,11 @@ def load_config() -> dict:
     config_path = get_file_path("config.yaml")
 
     if not config_path.exists():
-        print(f"Error: config.yaml not found at {config_path}")
-        print("Please run setup.py to configure WhatThePatch.")
+        from cli_utils import print_cli_error
+        print_cli_error(
+            f"config.yaml not found at [yellow]{config_path}[/yellow]",
+            hints=["Run setup.py to configure WhatThePatch."]
+        )
         sys.exit(1)
 
     with open(config_path) as f:
@@ -394,10 +400,15 @@ def parse_pr_url(url: str) -> dict:
                 "pr_number": path_parts[3],
             }
 
-    print(f"Error: Could not parse PR URL: {url}")
-    print("Supported formats:")
-    print("  GitHub: https://github.com/owner/repo/pull/123")
-    print("  Bitbucket: https://bitbucket.org/workspace/repo/pull-requests/123")
+    from cli_utils import print_cli_error
+    print_cli_error(
+        f"Could not parse PR URL: [yellow]{url}[/yellow]",
+        hints=[
+            "Supported formats:",
+            "  GitHub:    https://github.com/owner/repo/pull/123",
+            "  Bitbucket: https://bitbucket.org/workspace/repo/pull-requests/123",
+        ]
+    )
     sys.exit(1)
 
 
@@ -495,8 +506,11 @@ def generate_review(
     try:
         from engines import get_engine, EngineError
     except ImportError as e:
-        print(f"Error: Could not load engines module: {e}")
-        print("Please run setup.py to install WhatThePatch properly.")
+        from cli_utils import print_cli_error
+        print_cli_error(
+            f"Could not load engines module: [yellow]{e}[/yellow]",
+            hints=["Run setup.py to install WhatThePatch properly."]
+        )
         sys.exit(1)
 
     engine_name = config.get("engine", "claude-api")
@@ -506,7 +520,8 @@ def generate_review(
         engine = get_engine(engine_name, config)
         return engine.generate_review(pr_data, ticket_id, prompt_template, external_context)
     except EngineError as e:
-        print(f"Error: {e}")
+        from cli_utils import print_cli_error
+        print_cli_error(str(e))
         sys.exit(1)
 
 
@@ -745,11 +760,17 @@ def convert_to_html(markdown_content: str, title: str = "PR Review") -> str:
     # Post-process: Convert severity labels to styled badges
     # Matches patterns like: <h3>🔴 Critical: Issue Title</h3>
     severity_patterns = [
+        # Unicode emoji format
         (r'(<h3>)\s*🔴\s*Critical:', r'\1<span class="severity-badge severity-critical">Critical</span>'),
         (r'(<h3>)\s*🟠\s*High:', r'\1<span class="severity-badge severity-high">High</span>'),
         (r'(<h3>)\s*🟡\s*Medium:', r'\1<span class="severity-badge severity-medium">Medium</span>'),
         (r'(<h3>)\s*🟢\s*Low:', r'\1<span class="severity-badge severity-low">Low</span>'),
-        # Also handle without emoji (fallback)
+        # Markdown emoji shortcode format (AI sometimes outputs these)
+        (r'(<h3>)\s*:red_circle:\s*Critical:', r'\1<span class="severity-badge severity-critical">Critical</span>'),
+        (r'(<h3>)\s*:orange_circle:\s*High:', r'\1<span class="severity-badge severity-high">High</span>'),
+        (r'(<h3>)\s*:yellow_circle:\s*Medium:', r'\1<span class="severity-badge severity-medium">Medium</span>'),
+        (r'(<h3>)\s*:green_circle:\s*Low:', r'\1<span class="severity-badge severity-low">Low</span>'),
+        # Fallback without emoji
         (r'(<h3>)\s*Critical:', r'\1<span class="severity-badge severity-critical">Critical</span>'),
         (r'(<h3>)\s*High:', r'\1<span class="severity-badge severity-high">High</span>'),
         (r'(<h3>)\s*Medium:', r'\1<span class="severity-badge severity-medium">Medium</span>'),
@@ -805,7 +826,7 @@ def auto_open_file(file_path: Path) -> bool:
 def run_config_test() -> bool:
     """Run configuration tests. Returns True if all pass."""
     console.print()
-    console.print("[bold]Testing configuration...[/bold]\n")
+    console.print("[bold]Testing configuration[/bold]")
 
     config_path = get_file_path("config.yaml")
     if not config_path.exists():
@@ -948,7 +969,7 @@ def run_config_test() -> bool:
     # Display AI Engines table
     if engine_results:
         console.print()
-        console.print("[bold]AI Engines:[/bold]")
+        console.print("[bold]AI Engines[/bold]")
         engine_table = create_status_table(["Engine", "Model", "Status", "Details"])
 
         active_engine_passed = False
@@ -1624,8 +1645,11 @@ def show_prompt():
     prompt_path = get_file_path("prompt.md")
 
     if not prompt_path.exists():
-        print(f"Error: prompt.md not found at {prompt_path}")
-        print("Run 'python setup.py' to install WhatThePatch.")
+        from cli_utils import print_cli_error
+        print_cli_error(
+            f"prompt.md not found at [yellow]{prompt_path}[/yellow]",
+            hints=["Run 'python setup.py' to install WhatThePatch."]
+        )
         sys.exit(1)
 
     print(f"Prompt file: {prompt_path}\n")
@@ -1640,8 +1664,11 @@ def edit_prompt():
     prompt_path = get_file_path("prompt.md")
 
     if not prompt_path.exists():
-        print(f"Error: prompt.md not found at {prompt_path}")
-        print("Run 'python setup.py' to install WhatThePatch.")
+        from cli_utils import print_cli_error
+        print_cli_error(
+            f"prompt.md not found at [yellow]{prompt_path}[/yellow]",
+            hints=["Run 'python setup.py' to install WhatThePatch."]
+        )
         sys.exit(1)
 
     # Determine editor
@@ -1857,12 +1884,44 @@ def run_update():
             pass
 
 
+class WTPArgumentParser(argparse.ArgumentParser):
+    """Custom argument parser with improved error formatting."""
+
+    def error(self, message):
+        """Display a formatted error message with highlighting."""
+        import re
+        from rich.console import Console
+
+        # Use a console that writes to stderr with force_terminal for colors
+        err_console = Console(stderr=True, force_terminal=True)
+
+        # Highlight the argument name in the error message
+        # Pattern matches: argument --foo/-f or argument --foo
+        highlighted_message = re.sub(
+            r'argument (--[\w-]+(?:/-\w+)?)',
+            r'argument [bold yellow]\1[/bold yellow]',
+            message
+        )
+        err_console.print()
+        err_console.print(f"[bold red]Error:[/bold red] {highlighted_message}")
+        err_console.print()
+
+        # Format usage on a single line for cleaner display
+        usage = self.format_usage().replace('usage: ', '').replace('\n', ' ')
+        usage = re.sub(r'\s+', ' ', usage).strip()
+        err_console.print(f"[dim]Usage:[/dim] [cyan]{usage}[/cyan]", highlight=False)
+        err_console.print()
+        err_console.print("[dim]Run[/dim] [cyan]wtp --help[/cyan] [dim]for more information.[/dim]")
+        err_console.print()
+        sys.exit(2)
+
+
 def main():
     # Show banner for help
     if len(sys.argv) == 1 or "-h" in sys.argv or "--help" in sys.argv:
         print_banner()
 
-    parser = argparse.ArgumentParser(
+    parser = WTPArgumentParser(
         prog="wtp",
         description="WhatThePatch - Generate AI-powered PR reviews",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1870,28 +1929,8 @@ def main():
 Examples:
   wtp --review https://github.com/owner/repo/pull/123
   wtp --review https://bitbucket.org/workspace/repo/pull-requests/456
-
-  # Include external context (private repos, shared libraries)
   wtp --review <URL> --context /path/to/shared-lib
-  wtp --review <URL> -c /path/to/types -c /path/to/shared-utils
-
-  # Test without calling AI (dry run)
-  wtp --review <URL> --dry-run
-  wtp --review <URL> --context /path/to/lib --dry-run
-
-  # Verbose output (see prompt preview)
-  wtp --review <URL> --verbose
-  wtp --review <URL> -c /path/to/lib -v --dry-run
-
-  # Other commands
-  wtp --status
-  wtp --switch-engine
-  wtp --switch-model
-  wtp --switch-output
-  wtp --test-config
-  wtp --update
-  wtp --show-prompt
-  wtp --edit-prompt
+  wtp --review <URL> --dry-run --verbose
 
 Author:
   Aaron Medina
@@ -1904,77 +1943,89 @@ Author:
         action="version",
         version=f"%(prog)s v{__version__}",
     )
-    parser.add_argument(
+
+    # Review commands
+    review_group = parser.add_argument_group("Review")
+    review_group.add_argument(
         "--review", "-r",
         metavar="URL",
-        help="URL of the pull request to review",
+        help="Generate a review for the given PR URL",
     )
-    parser.add_argument(
-        "--test-config",
-        action="store_true",
-        help="Test the current configuration",
+    review_group.add_argument(
+        "--context", "-c",
+        action="append",
+        metavar="PATH",
+        help="Add local file/directory as context (can use multiple times)",
     )
-    parser.add_argument(
-        "--update",
-        action="store_true",
-        help="Update the tool from the git repository",
-    )
-    parser.add_argument(
-        "--show-prompt",
-        action="store_true",
-        help="Display the current review prompt template",
-    )
-    parser.add_argument(
-        "--edit-prompt",
-        action="store_true",
-        help="Open the prompt template in your editor",
-    )
-    parser.add_argument(
-        "--status",
-        action="store_true",
-        help="Show current configuration and active AI engine",
-    )
-    parser.add_argument(
-        "--switch-engine",
-        action="store_true",
-        help="Switch between configured AI engines",
-    )
-    parser.add_argument(
-        "--switch-output",
-        action="store_true",
-        help="Switch between output formats (html, md, txt)",
-    )
-    parser.add_argument(
-        "--switch-model",
-        action="store_true",
-        help="Switch the AI model for the active engine",
-    )
-    parser.add_argument(
+    review_group.add_argument(
         "--format", "-f",
         choices=["md", "txt", "html"],
         metavar="FORMAT",
         help="Output format: html (default), md, or txt",
     )
-    parser.add_argument(
+    review_group.add_argument(
         "--no-open",
         action="store_true",
         help="Don't auto-open the output file after generation",
     )
-    parser.add_argument(
-        "--context", "-c",
-        action="append",
-        metavar="PATH",
-        help="Add local file or directory as context (can be used multiple times)",
-    )
-    parser.add_argument(
+    review_group.add_argument(
         "--dry-run",
         action="store_true",
-        help="Show what would be sent to the AI without actually calling it",
+        help="Preview what would be sent to AI without calling it",
     )
-    parser.add_argument(
+    review_group.add_argument(
         "--verbose", "-v",
         action="store_true",
-        help="Show detailed output including context files and prompt preview",
+        help="Show detailed output including prompt preview",
+    )
+
+    # Configuration commands
+    config_group = parser.add_argument_group("Configuration")
+    config_group.add_argument(
+        "--status",
+        action="store_true",
+        help="Show current configuration and active AI engine",
+    )
+    config_group.add_argument(
+        "--switch-engine",
+        action="store_true",
+        help="Switch between configured AI engines",
+    )
+    config_group.add_argument(
+        "--switch-model",
+        action="store_true",
+        help="Switch the AI model for the active engine",
+    )
+    config_group.add_argument(
+        "--switch-output",
+        action="store_true",
+        help="Switch between output formats (html, md, txt)",
+    )
+    config_group.add_argument(
+        "--test-config",
+        action="store_true",
+        help="Test all engines and credentials",
+    )
+
+    # Prompt commands
+    prompt_group = parser.add_argument_group("Prompt")
+    prompt_group.add_argument(
+        "--show-prompt",
+        action="store_true",
+        help="Display the current review prompt template",
+    )
+    prompt_group.add_argument(
+        "--edit-prompt",
+        action="store_true",
+        help="Open the prompt template in your editor",
+    )
+
+    # Utility commands
+    util_group = parser.add_argument_group("Utility")
+    util_group.add_argument(
+        "--update",
+        action="store_true",
+        help="Update WhatThePatch from the git repository",
     )
     args = parser.parse_args()
 
