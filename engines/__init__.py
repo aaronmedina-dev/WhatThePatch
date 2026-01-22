@@ -9,9 +9,10 @@ Available engines:
 - claude-cli: Claude Code CLI (uses existing auth)
 - openai-api: OpenAI GPT models (direct API)
 - openai-codex-cli: OpenAI Codex CLI (uses existing ChatGPT auth)
+- gemini-api: Google Gemini API (direct)
+- gemini-cli: Google Gemini CLI (uses existing Google auth)
 
 Future engines:
-- gemini: Google Gemini
 - ollama: Local Ollama models
 """
 
@@ -20,6 +21,8 @@ from .claude_api import ClaudeAPIEngine
 from .claude_cli import ClaudeCLIEngine
 from .openai_api import OpenAIAPIEngine
 from .openai_codex_cli import OpenAICodexCLIEngine
+from .gemini_api import GeminiAPIEngine
+from .gemini_cli import GeminiCLIEngine
 
 # Registry of available engines
 ENGINES = {
@@ -27,6 +30,8 @@ ENGINES = {
     "claude-cli": ClaudeCLIEngine,
     "openai-api": OpenAIAPIEngine,
     "openai-codex-cli": OpenAICodexCLIEngine,
+    "gemini-api": GeminiAPIEngine,
+    "gemini-cli": GeminiCLIEngine,
 }
 
 
