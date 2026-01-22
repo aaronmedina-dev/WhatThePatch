@@ -821,33 +821,46 @@ def run_config_test() -> bool:
     # Test config file
     results.append(("Config file", True, str(config_path)))
 
-    # Test AI engine
-    engine_name = config.get("engine", "claude-api")
+    # Test all AI engines and mark active one
+    active_engine = config.get("engine", "claude-api")
+    engine_results = []  # Separate list for engine results
 
     with get_progress_spinner() as progress:
-        task = progress.add_task(f"Testing {engine_name} engine...", total=None)
+        task = progress.add_task("Testing AI engines...", total=None)
 
         try:
             from engines import get_engine, list_engines, EngineError
 
-            if engine_name not in list_engines():
-                results.append(("AI Engine", False, f"Unknown engine '{engine_name}'"))
-            else:
-                try:
-                    engine = get_engine(engine_name, config)
-                    is_valid, error = engine.validate_config()
-                    if not is_valid:
-                        results.append(("AI Engine", False, error))
-                    else:
-                        success, error = engine.test_connection()
-                        if success:
-                            results.append(("AI Engine", True, f"{engine_name} ready"))
+            available_engines = list_engines()
+
+            for engine_name in available_engines:
+                progress.update(task, description=f"Testing {engine_name}...")
+
+                # Check basic config status first (CLI availability, API key presence)
+                is_configured, status_msg = get_engine_config_status(engine_name, config)
+                model = get_engine_model(engine_name, config)
+
+                if not is_configured:
+                    # Not configured - show as skipped/unavailable
+                    engine_results.append((engine_name, None, status_msg, engine_name == active_engine, model))
+                else:
+                    # Configured - test actual connection
+                    try:
+                        engine = get_engine(engine_name, config)
+                        is_valid, error = engine.validate_config()
+                        if not is_valid:
+                            engine_results.append((engine_name, False, error, engine_name == active_engine, model))
                         else:
-                            results.append(("AI Engine", False, error))
-                except EngineError as e:
-                    results.append(("AI Engine", False, str(e)))
+                            success, error = engine.test_connection()
+                            if success:
+                                engine_results.append((engine_name, True, "Ready", engine_name == active_engine, model))
+                            else:
+                                engine_results.append((engine_name, False, error or "Connection failed", engine_name == active_engine, model))
+                    except EngineError as e:
+                        engine_results.append((engine_name, False, str(e), engine_name == active_engine, model))
+
         except ImportError as e:
-            results.append(("AI Engine", False, f"Module error: {e}"))
+            results.append(("AI Engines", False, f"Module error: {e}"))
 
         # Test GitHub token
         progress.update(task, description="Testing GitHub token...")
@@ -931,6 +944,44 @@ def run_config_test() -> bool:
         table.add_row(check, status_text, format_dim(details) if details else "")
 
     console.print(table)
+
+    # Display AI Engines table
+    if engine_results:
+        console.print()
+        console.print("[bold]AI Engines:[/bold]")
+        engine_table = create_status_table(["Engine", "Model", "Status", "Details"])
+
+        active_engine_passed = False
+        for engine_name, status, details, is_active, model in engine_results:
+            # Format engine name with active marker
+            if is_active:
+                name_display = f"[bold]{engine_name}[/bold] [cyan](active)[/cyan]"
+            else:
+                name_display = engine_name
+
+            if status is True:
+                status_text = "[green]PASS[/green]"
+                if is_active:
+                    active_engine_passed = True
+            elif status is False:
+                status_text = "[red]FAIL[/red]"
+            else:
+                status_text = "[dim]SKIP[/dim]"
+
+            engine_table.add_row(name_display, format_dim(model), status_text, format_dim(details) if details else "")
+
+        console.print(engine_table)
+
+        # Count active engine in pass/fail
+        if active_engine_passed:
+            passed += 1
+        else:
+            # Check if active engine failed (not just skipped)
+            for engine_name, status, details, is_active, model in engine_results:
+                if is_active and status is False:
+                    failed += 1
+                    break
+
     console.print()
 
     if failed == 0:
@@ -997,12 +1048,29 @@ def show_status():
         elif engine_name == "openai-codex-cli":
             cli_path = engine_config.get("path", "")
             engine_table.add_row("CLI Path", cli_path if cli_path else format_dim("System PATH (default)"))
-            engine_table.add_row("Model", engine_config.get('model', 'gpt-5-codex'))
+            engine_table.add_row("Model", engine_config.get('model', 'gpt-5'))
             api_key = engine_config.get("api_key", "")
             if api_key:
                 engine_table.add_row("API Key", f"Configured {format_dim(f'({api_key[:12]}...)')}")
             else:
                 engine_table.add_row("API Key", format_dim("Using ChatGPT sign-in"))
+        elif engine_name == "gemini-api":
+            api_key = engine_config.get("api_key", "")
+            if api_key and not api_key.startswith("AIza..."):
+                engine_table.add_row("API Key", f"Configured {format_dim(f'({api_key[:12]}...)')}")
+            else:
+                engine_table.add_row("API Key", format_value("Not configured", "warning"))
+            engine_table.add_row("Model", engine_config.get('model', 'gemini-2.0-flash'))
+            engine_table.add_row("Max Tokens", str(engine_config.get('max_tokens', 4096)))
+        elif engine_name == "gemini-cli":
+            cli_path = engine_config.get("path", "")
+            engine_table.add_row("CLI Path", cli_path if cli_path else format_dim("System PATH (default)"))
+            engine_table.add_row("Model", engine_config.get('model', 'gemini-2.0-flash'))
+            api_key = engine_config.get("api_key", "")
+            if api_key:
+                engine_table.add_row("API Key", f"Configured {format_dim(f'({api_key[:12]}...)')}")
+            else:
+                engine_table.add_row("API Key", format_dim("Using Google auth"))
 
         # Validate engine
         try:
@@ -1067,6 +1135,7 @@ def show_status():
     # Quick commands
     print_commands([
         ("wtp --switch-engine", "Switch AI engine"),
+        ("wtp --switch-model", "Switch AI model"),
         ("wtp --switch-output", "Switch format (html/md/txt)"),
         ("wtp --test-config", "Test configuration"),
         ("wtp --edit-prompt", "Customize review prompt"),
@@ -1097,13 +1166,114 @@ def get_engine_config_status(engine_name: str, config: dict) -> tuple[bool, str]
         return False, "API key not configured"
 
     elif engine_name == "openai-codex-cli":
-        # Check if codex is available
+        # CLI engines are ready if the CLI tool is available on the system
+        # No config.yaml setup required if CLI is installed and authenticated
         cli_path = engine_config.get("path", "") or shutil.which("codex")
         if cli_path:
-            return True, f"CLI available"
+            return True, "CLI available"
         return False, "codex command not found"
 
+    elif engine_name == "gemini-api":
+        api_key = engine_config.get("api_key", "")
+        if api_key and not api_key.startswith("AIza..."):
+            return True, "API key configured"
+        return False, "API key not configured"
+
+    elif engine_name == "gemini-cli":
+        # CLI engines are ready if the CLI tool is available on the system
+        # No config.yaml setup required if CLI is installed and authenticated
+        cli_path = engine_config.get("path", "") or shutil.which("gemini")
+        if cli_path:
+            return True, "CLI available"
+        return False, "gemini command not found"
+
     return False, "Unknown engine"
+
+
+# Default models for each engine (must match engine implementations)
+ENGINE_DEFAULT_MODELS = {
+    "claude-api": "claude-sonnet-4-20250514",
+    "claude-cli": None,  # Claude CLI uses its own configured model
+    "openai-api": "gpt-4o",
+    "openai-codex-cli": "gpt-5",
+    "gemini-api": "gemini-2.0-flash",
+    "gemini-cli": "gemini-2.0-flash",
+}
+
+
+def get_engine_model(engine_name: str, config: dict) -> str:
+    """Get the configured model for an engine, or its default."""
+    engine_config = config.get("engines", {}).get(engine_name, {})
+
+    if engine_name == "claude-cli":
+        # Claude CLI doesn't have a model setting in config
+        # It uses whatever model is configured in Claude CLI itself
+        # Check if --model is passed via args
+        args = engine_config.get("args", [])
+        if args and "--model" in args:
+            try:
+                model_idx = args.index("--model")
+                if model_idx + 1 < len(args):
+                    return args[model_idx + 1]
+            except (ValueError, IndexError):
+                pass
+        return "(uses CLI default)"
+
+    default_model = ENGINE_DEFAULT_MODELS.get(engine_name, "unknown")
+    return engine_config.get("model", default_model)
+
+
+def get_available_models(engine_name: str, config: dict) -> list[str]:
+    """
+    Get available models for an engine from config.yaml.
+
+    Users can customize the available_models list in their config.yaml.
+    Falls back to built-in defaults if not configured.
+
+    Returns list of model IDs.
+    """
+    # Check if user has configured available_models in config.yaml
+    engine_config = config.get("engines", {}).get(engine_name, {})
+    user_models = engine_config.get("available_models", [])
+
+    if user_models:
+        return user_models
+
+    # Fallback to built-in defaults if not configured
+    default_models = {
+        "claude-api": [
+            "claude-sonnet-4-20250514",
+            "claude-opus-4-20250514",
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-haiku-20241022",
+        ],
+        "claude-cli": [],  # No model selection - uses CLI's configured model
+        "openai-api": [
+            "gpt-4o",
+            "gpt-4o-mini",
+            "gpt-4-turbo",
+            "o1",
+            "o1-mini",
+        ],
+        "openai-codex-cli": [
+            "gpt-5",
+            "gpt-4o",
+            "o1",
+        ],
+        "gemini-api": [
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-thinking-exp",
+            "gemini-1.5-pro",
+            "gemini-1.5-flash",
+        ],
+        "gemini-cli": [
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-thinking-exp",
+            "gemini-1.5-pro",
+            "gemini-1.5-flash",
+        ],
+    }
+    return default_models.get(engine_name, [])
 
 
 def switch_engine():
@@ -1131,11 +1301,12 @@ def switch_engine():
 
     # Build engine status table
     engine_status = {}
-    table = create_status_table(["#", "Engine", "Status", "Details"])
+    table = create_status_table(["#", "Engine", "Model", "Status", "Details"])
 
     for i, engine_name in enumerate(available_engines, 1):
         is_configured, status_msg = get_engine_config_status(engine_name, config)
         engine_status[engine_name] = is_configured
+        model = get_engine_model(engine_name, config)
 
         # Format engine name
         if engine_name == current_engine:
@@ -1148,11 +1319,11 @@ def switch_engine():
             name_display = engine_name
             status_display = format_value("Not configured", "warning")
 
-        table.add_row(str(i), name_display, status_display, format_dim(status_msg))
+        table.add_row(str(i), name_display, format_dim(model), status_display, format_dim(status_msg))
 
     console.print(table)
     console.print()
-    console.print(format_dim("Enter number to switch, 's' for setup, or 'q' to quit:"))
+    console.print(format_dim("Enter number to switch, 's' for setup, 'm' to change model, or 'q' to quit:"))
 
     try:
         while True:
@@ -1166,6 +1337,10 @@ def switch_engine():
                 console.print(f"\nRun [cyan]python setup.py[/cyan] to set up a new engine.")
                 return
 
+            if choice == 'm':
+                console.print(f"\nRun [cyan]wtp --switch-model[/cyan] to change the model for the active engine.")
+                return
+
             try:
                 choice_num = int(choice)
                 if 1 <= choice_num <= len(available_engines):
@@ -1174,7 +1349,7 @@ def switch_engine():
                 else:
                     console.print(f"[yellow]Enter a number between 1 and {len(available_engines)}[/yellow]")
             except ValueError:
-                console.print("[yellow]Invalid input. Enter a number, 's', or 'q'.[/yellow]")
+                console.print("[yellow]Invalid input. Enter a number, 's', 'm', or 'q'.[/yellow]")
 
         # Check if selected engine is configured
         if not engine_status[selected_engine]:
@@ -1306,6 +1481,130 @@ def switch_output():
                 f.write(new_content)
 
         print_success(f"Switched to {selected_format.upper()}", {"Config": str(config_path)})
+
+    except Exception as e:
+        print_error(f"Error updating config: {e}", ["Please update config.yaml manually."])
+
+
+def switch_model():
+    """Interactive model switcher for the active engine."""
+    console.print()
+
+    # Check if config exists
+    config_path = get_file_path("config.yaml")
+    if not config_path.exists():
+        print_error(
+            "Config file not found",
+            [f"Expected at: {config_path}", "Run 'python setup.py' to configure."]
+        )
+        return
+
+    config = load_config()
+    current_engine = config.get("engine", "claude-api")
+    current_model = get_engine_model(current_engine, config)
+
+    # Get available models for this engine from config (or defaults)
+    available_models = get_available_models(current_engine, config)
+
+    if not available_models:
+        if current_engine == "claude-cli":
+            console.print(f"[yellow]Claude CLI uses its own model configuration.[/yellow]")
+            console.print(f"\nTo change the model, add it to your config.yaml under engines.claude-cli.args:")
+            console.print(f'  args: ["--model", "opus"]')
+            console.print(f"\nOr configure the model in your Claude CLI settings.")
+        else:
+            print_warning(f"No model options available for {current_engine}")
+            console.print(f"\nYou can add models to config.yaml under engines.{current_engine}.available_models")
+        return
+
+    console.print(f"[bold]Select model for {current_engine}[/bold]")
+    console.print(f"Current model: {format_highlight(current_model)}\n")
+
+    # Build model table
+    table = create_status_table(["#", "Model", "Status"])
+
+    for i, model_id in enumerate(available_models, 1):
+        if model_id == current_model:
+            model_display = format_active(model_id)
+            status_display = format_value("Active", "success")
+        else:
+            model_display = model_id
+            status_display = format_dim("Available")
+
+        table.add_row(str(i), model_display, status_display)
+
+    # Add custom option
+    table.add_row("c", format_dim("Enter custom model"), format_dim(""))
+
+    console.print(table)
+    console.print()
+    console.print(format_dim("Enter number to switch, 'c' for custom, or 'q' to quit:"))
+
+    try:
+        while True:
+            choice = console.input("[cyan]> [/cyan]").strip().lower()
+
+            if choice == 'q':
+                console.print(format_dim("No changes made."))
+                return
+
+            if choice == 'c':
+                # Custom model input
+                console.print(format_dim("\nEnter the model name (e.g., gpt-4o, claude-sonnet-4-20250514):"))
+                custom_model = console.input("[cyan]Model: [/cyan]").strip()
+                if custom_model:
+                    selected_model = custom_model
+                    break
+                else:
+                    console.print("[yellow]No model entered. Please try again.[/yellow]")
+                    continue
+
+            try:
+                choice_num = int(choice)
+                if 1 <= choice_num <= len(available_models):
+                    selected_model = available_models[choice_num - 1]
+                    break
+                else:
+                    console.print(f"[yellow]Enter a number between 1 and {len(available_models)}, 'c', or 'q'[/yellow]")
+            except ValueError:
+                console.print("[yellow]Invalid input. Enter a number, 'c', or 'q'.[/yellow]")
+    except KeyboardInterrupt:
+        console.print(format_dim("\nCancelled."))
+        return
+
+    # Update config file
+    if selected_model == current_model:
+        console.print(f"\n{selected_model} is already the active model.")
+        return
+
+    try:
+        with open(config_path, 'r') as f:
+            config_content = f.read()
+
+        # Try to update the model in the specific engine section
+        # Pattern: find the engine section and update its model line
+        engine_section_pattern = rf'(^\s*{re.escape(current_engine)}:\s*\n(?:.*\n)*?)(^\s*model:\s*)["\']?[^"\'\n]+["\']?(\s*$)'
+        new_content = re.sub(
+            engine_section_pattern,
+            rf'\g<1>\g<2>"{selected_model}"\3',
+            config_content,
+            flags=re.MULTILINE
+        )
+
+        if new_content == config_content:
+            # Regex didn't match, update via YAML
+            if "engines" not in config:
+                config["engines"] = {}
+            if current_engine not in config["engines"]:
+                config["engines"][current_engine] = {}
+            config["engines"][current_engine]["model"] = selected_model
+            with open(config_path, 'w') as f:
+                yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        else:
+            with open(config_path, 'w') as f:
+                f.write(new_content)
+
+        print_success(f"Switched {current_engine} to {selected_model}", {"Config": str(config_path)})
 
     except Exception as e:
         print_error(f"Error updating config: {e}", ["Please update config.yaml manually."])
@@ -1578,6 +1877,7 @@ Examples:
   # Other commands
   wtp --status
   wtp --switch-engine
+  wtp --switch-model
   wtp --switch-output
   wtp --test-config
   wtp --update
@@ -1636,6 +1936,11 @@ Author:
         help="Switch between output formats (html, md, txt)",
     )
     parser.add_argument(
+        "--switch-model",
+        action="store_true",
+        help="Switch the AI model for the active engine",
+    )
+    parser.add_argument(
         "--format", "-f",
         choices=["md", "txt", "html"],
         metavar="FORMAT",
@@ -1689,6 +1994,11 @@ Author:
 
     if args.switch_output:
         switch_output()
+        show_update_notification()
+        return
+
+    if args.switch_model:
+        switch_model()
         show_update_notification()
         return
 

@@ -158,18 +158,21 @@ engines:
 
 Uses your existing Claude Code installation. Great for team users without personal API keys.
 
+**No config.yaml setup required** - if `claude` is in your PATH and authenticated, it's ready to use.
+
 ```yaml
 engine: "claude-cli"
 
 engines:
   claude-cli:
-    path: ""  # Leave empty to use system PATH
-    args: []  # Additional arguments
+    path: ""  # Leave empty to use system PATH (recommended)
+    args: []  # Additional arguments (optional)
 ```
 
 **Pros:**
 - Uses existing team authentication
 - No additional API key needed
+- No config.yaml setup required if CLI is installed
 - Same billing as your Claude Code usage
 
 **Requirements:**
@@ -203,19 +206,22 @@ engines:
 
 Uses your existing OpenAI Codex CLI installation. Great for ChatGPT Plus/Pro/Team users.
 
+**No config.yaml setup required** - if `codex` is in your PATH and authenticated, it's ready to use.
+
 ```yaml
 engine: "openai-codex-cli"
 
 engines:
   openai-codex-cli:
-    path: ""  # Leave empty to use system PATH
-    model: "gpt-5-codex"
+    path: ""  # Leave empty to use system PATH (recommended)
+    model: "gpt-5-codex"  # Optional
     api_key: ""  # Optional, uses ChatGPT sign-in by default
 ```
 
 **Pros:**
 - Uses existing ChatGPT authentication
 - No additional API key needed
+- No config.yaml setup required if CLI is installed
 - Same billing as your ChatGPT subscription
 
 **Requirements:**
@@ -250,20 +256,23 @@ engines:
 
 Uses your existing Gemini CLI installation. Great for users with Google Cloud authentication.
 
+**No config.yaml setup required** - if `gemini` is in your PATH and authenticated, it's ready to use.
+
 ```yaml
 engine: "gemini-cli"
 
 engines:
   gemini-cli:
-    path: ""  # Leave empty to use system PATH
-    model: "gemini-2.0-flash"
-    api_key: ""  # Optional, uses Google auth by default
+    path: ""  # Leave empty to use system PATH (recommended)
+    model: "gemini-2.0-flash"  # Optional
+    api_key: ""  # Optional, uses Google auth or GEMINI_API_KEY by default
 ```
 
 **Pros:**
 - Uses existing Google authentication
 - Can use Google Cloud billing
-- No separate API key needed if using `gemini auth`
+- No config.yaml setup required if CLI is installed
+- No separate API key needed if using `gemini auth` or `GEMINI_API_KEY`
 
 **Requirements:**
 - Gemini CLI installed from: https://github.com/google-gemini/gemini-cli
@@ -433,8 +442,9 @@ python test_context.py ./banner.py ./prompt.md /path/to/external/repo
 | `wtp --help` | Show help and usage information |
 | `wtp --status` | Show current configuration and active AI engine |
 | `wtp --switch-engine` | Switch between configured AI engines |
+| `wtp --switch-model` | Switch the AI model for the active engine |
 | `wtp --switch-output` | Switch default output format (html, md, txt) |
-| `wtp --test-config` | Test your configuration (tokens, API keys) |
+| `wtp --test-config` | Test your configuration (tokens, API keys, shows all engines with models) |
 | `wtp --update` | Update the tool from the git repository |
 | `wtp --show-prompt` | Display the current review prompt template |
 | `wtp --edit-prompt` | Open the prompt template in your editor |
@@ -474,6 +484,7 @@ See `config.example.yaml` for all available options:
 | `api_key` | Anthropic API key (required) |
 | `model` | Claude model to use (default: `claude-sonnet-4-20250514`) |
 | `max_tokens` | Max response length (default: `4096`) |
+| `available_models` | List of models shown in `--switch-model` (customizable) |
 
 **Claude CLI (`engines.claude-cli`)**
 
@@ -489,14 +500,16 @@ See `config.example.yaml` for all available options:
 | `api_key` | OpenAI API key (required) |
 | `model` | OpenAI model to use (default: `gpt-4o`) |
 | `max_tokens` | Max response length (default: `4096`) |
+| `available_models` | List of models shown in `--switch-model` (customizable) |
 
 **OpenAI Codex CLI (`engines.openai-codex-cli`)**
 
 | Setting | Description |
 |---------|-------------|
 | `path` | Path to codex executable (leave empty for system PATH) |
-| `model` | Model to use (default: `gpt-5-codex`) |
+| `model` | Model to use (default: `gpt-5`) |
 | `api_key` | Optional API key (uses ChatGPT sign-in if empty) |
+| `available_models` | List of models shown in `--switch-model` (customizable) |
 
 **Gemini API (`engines.gemini-api`)**
 
@@ -505,6 +518,7 @@ See `config.example.yaml` for all available options:
 | `api_key` | Google AI API key (required) |
 | `model` | Gemini model to use (default: `gemini-2.0-flash`) |
 | `max_tokens` | Max response length (default: `4096`) |
+| `available_models` | List of models shown in `--switch-model` (customizable) |
 
 **Gemini CLI (`engines.gemini-cli`)**
 
@@ -513,6 +527,26 @@ See `config.example.yaml` for all available options:
 | `path` | Path to gemini executable (leave empty for system PATH) |
 | `model` | Model to use (default: `gemini-2.0-flash`) |
 | `api_key` | Optional API key (uses Google auth or GEMINI_API_KEY if empty) |
+| `available_models` | List of models shown in `--switch-model` (customizable) |
+
+### Customizing Available Models
+
+Each engine has an `available_models` list that controls which models appear in `wtp --switch-model`. You can customize this list in your `config.yaml`:
+
+```yaml
+engines:
+  claude-api:
+    api_key: "sk-ant-..."
+    model: "claude-sonnet-4-20250514"
+    available_models:
+      - "claude-sonnet-4-20250514"
+      - "claude-opus-4-20250514"
+      - "my-custom-model"  # Add any model you have access to
+```
+
+If `available_models` is not specified, built-in defaults are used. You can also enter any custom model name directly in `--switch-model` by selecting the "Enter custom model" option.
+
+**Note:** If you configure an invalid model, you'll get a helpful error message when running a review. Use `wtp --test-config` to verify your model configuration.
 
 ### Repository Access Tokens
 
@@ -775,6 +809,31 @@ To remove the CLI command:
 ```bash
 python setup.py --uninstall
 ```
+
+## Development
+
+### Running Tests
+
+Install development dependencies and run the test suite:
+
+```bash
+# Install test dependencies
+pip install -r requirements-dev.txt
+
+# Run all tests
+pytest tests/
+
+# Run with verbose output
+pytest tests/ -v
+
+# Generate HTML report dashboard
+pytest tests/ --html=tests/report.html --self-contained-html
+
+# Run with coverage
+pytest tests/ --cov=. --cov-report=html
+```
+
+See `tests/README.md` for detailed test documentation.
 
 ## TODOs
 - external context

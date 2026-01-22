@@ -66,7 +66,8 @@ class GeminiAPIEngine(BaseEngine):
             elif "quota" in error_str or "rate" in error_str:
                 return False, "API quota exceeded or rate limited"
             elif "not found" in error_str or "does not exist" in error_str:
-                return False, f"Model not found: {self.config.get('model', self.DEFAULT_MODEL)}"
+                model = self.config.get('model', self.DEFAULT_MODEL)
+                return False, f"Model not found: {model}. Check available models in config.yaml"
             return False, f"Connection failed: {e}"
 
     def generate_review(
@@ -122,6 +123,8 @@ class GeminiAPIEngine(BaseEngine):
                 raise EngineError("Invalid API key")
             elif "quota" in error_str or "rate" in error_str:
                 raise EngineError("API quota exceeded. Please try again later.")
+            elif "not found" in error_str or "does not exist" in error_str:
+                raise EngineError(f"Model not found: {model_name}. Run 'wtp --switch-model' to select a valid model or update available_models in config.yaml")
             elif "blocked" in error_str or "safety" in error_str:
                 raise EngineError(f"Content blocked by safety filters: {e}")
             raise EngineError(f"Failed to generate review: {e}")

@@ -64,7 +64,14 @@ class OpenAIAPIEngine(BaseEngine):
             return True, None
         except openai.AuthenticationError:
             return False, "Invalid API key"
+        except openai.NotFoundError as e:
+            model = self.config.get("model", self.DEFAULT_MODEL)
+            return False, f"Model not found: {model}. Check available models in config.yaml"
         except openai.APIError as e:
+            error_str = str(e).lower()
+            if "model" in error_str and ("not found" in error_str or "does not exist" in error_str):
+                model = self.config.get("model", self.DEFAULT_MODEL)
+                return False, f"Model not found: {model}. Check available models in config.yaml"
             return False, f"API error: {e}"
         except Exception as e:
             return False, f"Connection failed: {e}"
@@ -105,9 +112,14 @@ class OpenAIAPIEngine(BaseEngine):
 
         except openai.AuthenticationError:
             raise EngineError("Invalid API key")
+        except openai.NotFoundError:
+            raise EngineError(f"Model not found: {model}. Run 'wtp --switch-model' to select a valid model or update available_models in config.yaml")
         except openai.RateLimitError:
             raise EngineError("Rate limit exceeded. Please try again later.")
         except openai.APIError as e:
+            error_str = str(e).lower()
+            if "model" in error_str and ("not found" in error_str or "does not exist" in error_str):
+                raise EngineError(f"Model not found: {model}. Run 'wtp --switch-model' to select a valid model")
             raise EngineError(f"API error: {e}")
         except Exception as e:
             raise EngineError(f"Failed to generate review: {e}")

@@ -19,6 +19,13 @@ engines:
     api_key: "sk-ant-api03-..."
     model: "claude-sonnet-4-20250514"
     max_tokens: 4096
+    # Available models for --switch-model (customize this list as needed)
+    # See: https://docs.anthropic.com/en/docs/about-claude/models
+    available_models:
+      - "claude-sonnet-4-20250514"
+      - "claude-opus-4-20250514"
+      - "claude-3-5-sonnet-20241022"
+      - "claude-3-5-haiku-20241022"
 
   # Claude Code CLI settings
   claude-cli:
@@ -33,21 +40,41 @@ engines:
     api_key: "sk-..."
     model: "gpt-4o"
     max_tokens: 4096
+    # Available models for --switch-model (customize this list as needed)
+    # See: https://platform.openai.com/docs/models
+    available_models:
+      - "gpt-4o"
+      - "gpt-4o-mini"
+      - "gpt-4-turbo"
+      - "o1"
+      - "o1-mini"
 
   # OpenAI Codex CLI settings
   openai-codex-cli:
     # Path to codex executable (leave empty to use system PATH)
     path: ""
-    # Model to use (default: gpt-5-codex)
-    model: "gpt-5-codex"
+    # Model to use (default: gpt-5)
+    model: "gpt-5"
     # Optional API key (can also use CODEX_API_KEY env var or ChatGPT sign-in)
     api_key: ""
+    # Available models for --switch-model (customize this list as needed)
+    available_models:
+      - "gpt-5"
+      - "gpt-4o"
+      - "o1"
 
   # Google Gemini API settings
   gemini-api:
     api_key: "AIza..."
     model: "gemini-2.0-flash"
     max_tokens: 4096
+    # Available models for --switch-model (customize this list as needed)
+    # See: https://ai.google.dev/gemini-api/docs/models/gemini
+    available_models:
+      - "gemini-2.0-flash"
+      - "gemini-2.0-flash-thinking-exp"
+      - "gemini-1.5-pro"
+      - "gemini-1.5-flash"
 
   # Google Gemini CLI settings
   gemini-cli:
@@ -57,6 +84,12 @@ engines:
     model: "gemini-2.0-flash"
     # Optional API key (can also use GEMINI_API_KEY env var or Google Cloud auth)
     api_key: ""
+    # Available models for --switch-model (customize this list as needed)
+    available_models:
+      - "gemini-2.0-flash"
+      - "gemini-2.0-flash-thinking-exp"
+      - "gemini-1.5-pro"
+      - "gemini-1.5-flash"
 
   # Ollama local models (future)
   # ollama:
