@@ -32,9 +32,35 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import hashlib
-import requests
-import yaml
-import html2text
+
+# Track missing dependencies for helpful error messages
+_MISSING_DEPS = []
+
+try:
+    import requests
+except ImportError:
+    _MISSING_DEPS.append("requests")
+
+try:
+    import yaml
+except ImportError:
+    _MISSING_DEPS.append("pyyaml")
+
+try:
+    import html2text
+except ImportError:
+    _MISSING_DEPS.append("html2text")
+
+# Check for missing dependencies before proceeding
+if _MISSING_DEPS:
+    print("\n[Error] Missing required dependencies:", ", ".join(_MISSING_DEPS))
+    print("\nTo install missing dependencies, run one of:")
+    print("  pip install " + " ".join(_MISSING_DEPS))
+    print("  pip install -r requirements.txt")
+    print("  python setup.py  (interactive setup wizard)")
+    print("\nIf you recently ran --update, new dependencies may have been added.")
+    print("Run 'pip install -r requirements.txt' to install them.\n")
+    sys.exit(1)
 
 from banner import print_banner
 from cli_utils import (
@@ -2115,13 +2141,18 @@ GITHUB_RAW_BASE = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main"
 # Files that can be updated from GitHub
 UPDATABLE_FILES = [
     "whatthepatch.py",
+    "cli_utils.py",
+    "banner.py",
     "prompt.md",
+    "requirements.txt",
     "engines/__init__.py",
     "engines/base.py",
     "engines/claude_api.py",
     "engines/claude_cli.py",
     "engines/openai_api.py",
     "engines/openai_codex_cli.py",
+    "engines/gemini_api.py",
+    "engines/gemini_cli.py",
 ]
 
 
@@ -2133,6 +2164,52 @@ def _get_git_root(path: Path) -> Path | None:
             return current
         current = current.parent
     return None
+
+
+def _install_requirements(requirements_path: Path) -> bool:
+    """Install requirements from requirements.txt. Returns True on success."""
+    import subprocess
+
+    if not requirements_path.exists():
+        console.print(f"[dim]No requirements.txt found at {requirements_path}[/dim]")
+        return True  # Not an error if file doesn't exist
+
+    console.print()
+    console.print("[bold]Checking dependencies...[/bold]")
+
+    with get_progress_spinner() as progress:
+        progress.add_task("Installing requirements...", total=None)
+        try:
+            # Use pip to install requirements
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-r", str(requirements_path), "-q"],
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
+        except subprocess.TimeoutExpired:
+            print_warning("pip install timed out - you may need to run manually:")
+            console.print(f"  [cyan]pip install -r {requirements_path}[/cyan]")
+            return False
+        except FileNotFoundError:
+            print_warning("pip not found - install dependencies manually:")
+            console.print(f"  [cyan]pip install -r {requirements_path}[/cyan]")
+            return False
+        except Exception as e:
+            print_warning(f"Failed to install requirements: {e}")
+            return False
+
+    if result.returncode == 0:
+        console.print("[green]Dependencies up to date[/green]")
+        return True
+    else:
+        print_warning("Some dependencies may have failed to install")
+        if result.stderr:
+            console.print(f"[dim]{result.stderr.strip()}[/dim]")
+        console.print()
+        console.print("Run manually if needed:")
+        console.print(f"  [cyan]pip install -r {requirements_path}[/cyan]")
+        return False
 
 
 def _update_via_git(repo_root: Path) -> bool:
@@ -2270,11 +2347,15 @@ def run_update():
     # Check if running from installed location (~/.whatthepatch)
     is_installed = script_dir == INSTALL_DIR
 
+    update_success = False
+    requirements_path = None
+
     if is_installed:
         # Scenario 1: Running as CLI command from install directory
         console.print(f"[dim]Mode:[/dim] Installed CLI (wtp command)")
         console.print()
-        _update_via_download(INSTALL_DIR)
+        update_success = _update_via_download(INSTALL_DIR)
+        requirements_path = INSTALL_DIR / "requirements.txt"
     else:
         # Running directly as .py script
         git_root = _get_git_root(script_dir)
@@ -2283,12 +2364,18 @@ def run_update():
             # Scenario 2: Running from a git repository
             console.print(f"[dim]Mode:[/dim] Git repository")
             console.print()
-            _update_via_git(git_root)
+            update_success = _update_via_git(git_root)
+            requirements_path = git_root / "requirements.txt"
         else:
             # Scenario 3: Running as .py script but not in a git repo
             console.print(f"[dim]Mode:[/dim] Standalone script")
             console.print()
-            _update_via_download(script_dir)
+            update_success = _update_via_download(script_dir)
+            requirements_path = script_dir / "requirements.txt"
+
+    # Install/update dependencies if update was successful
+    if update_success and requirements_path:
+        _install_requirements(requirements_path)
 
     # Clear update cache so next check fetches fresh data
     if UPDATE_CACHE_FILE.exists():
