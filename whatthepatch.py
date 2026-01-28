@@ -1648,6 +1648,22 @@ def get_engine_config_status(engine_name: str, config: dict) -> tuple[bool, str]
             return True, "CLI available"
         return False, "gemini command not found"
 
+    elif engine_name == "ollama":
+        # Check if Ollama server is running
+        host = engine_config.get("host", "localhost:11434")
+        if not host.startswith("http"):
+            host = f"http://{host}"
+        try:
+            response = requests.get(f"{host}/api/tags", timeout=2)
+            if response.status_code == 200:
+                model = engine_config.get("model", "codellama")
+                return True, f"Server running (model: {model})"
+            return False, "Server not responding"
+        except requests.exceptions.ConnectionError:
+            return False, "Not running (start with: ollama serve)"
+        except Exception:
+            return False, "Connection failed"
+
     return False, "Unknown engine"
 
 
@@ -1659,6 +1675,7 @@ ENGINE_DEFAULT_MODELS = {
     "openai-codex-cli": "gpt-5",
     "gemini-api": "gemini-2.0-flash",
     "gemini-cli": "gemini-2.0-flash",
+    "ollama": "codellama",
 }
 
 

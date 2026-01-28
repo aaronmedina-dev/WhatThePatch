@@ -9,7 +9,7 @@
 #   - "openai-codex-cli": OpenAI Codex CLI (uses your existing ChatGPT auth)
 #   - "gemini-api": Google Gemini API (requires API key)
 #   - "gemini-cli": Google Gemini CLI (uses your existing Google auth)
-# Future engines: "ollama"
+#   - "ollama": Ollama local LLMs (no API key needed, runs locally)
 engine: "claude-api"
 
 # Engine-specific configurations
@@ -97,10 +97,76 @@ engines:
       - "gemini-1.5-pro"
       - "gemini-1.5-flash"
 
-  # Ollama local models (future)
-  # ollama:
-  #   host: "localhost:11434"
-  #   model: "llama3"
+  # Ollama - Local LLM support
+  # Runs models entirely on your machine. No API key needed!
+  # Install Ollama: https://ollama.com/download
+  # Start server: ollama serve
+  # Pull a model: ollama pull codellama
+  ollama:
+    # Ollama server address
+    # Default: localhost:11434 (local installation)
+    # For remote Ollama: use IP or hostname (e.g., "192.168.1.100:11434")
+    host: "localhost:11434"
+
+    # Model to use for code review
+    # Run 'ollama list' to see your installed models
+    # Run 'ollama pull <model>' to download new models
+    #
+    # Recommended models for code review:
+    #   - codellama (7B, ~8GB RAM) - Default, optimized for code
+    #   - codellama:13b (13B, ~16GB RAM) - Better understanding
+    #   - deepseek-coder-v2:lite (16B, ~12GB RAM) - Advanced analysis
+    #   - qwen2.5-coder (7B, ~8GB RAM) - Good code generation
+    #   - llama3.2 (3B, ~4GB RAM) - Fast, good for quick reviews
+    model: "codellama"
+
+    # Request timeout in seconds
+    # Local inference can be slow, especially without GPU
+    # Increase this for larger PRs or slower hardware
+    timeout: 300
+
+    # Optional: Override context window size (in tokens)
+    # Most models have sensible defaults. Only set this if you know
+    # your model supports larger context and you need it.
+    # Example: num_ctx: 32768
+    # num_ctx:
+
+    # Optional: System prompt to guide the model's behavior
+    # This can help improve code review quality
+    # Example: "You are an expert code reviewer. Be thorough but concise."
+    # system_prompt: ""
+
+    # Available models for --switch-model
+    # Customize this list based on models you have installed
+    # Run 'ollama list' to see your installed models
+    available_models:
+      - "codellama"
+      - "codellama:13b"
+      - "llama3.2"
+      - "deepseek-coder-v2:lite"
+      - "qwen2.5-coder"
+      - "mistral"
+
+# --- GPU Acceleration Notes (for Ollama) ---
+# Ollama automatically uses GPU if available. For best performance:
+#
+# macOS (Apple Silicon):
+#   - GPU acceleration works automatically via Metal
+#   - Unified memory means RAM = VRAM
+#   - M1/M2/M3 Macs work great for 7B-13B models
+#
+# Linux/Windows (NVIDIA):
+#   - Requires NVIDIA GPU with CUDA support
+#   - Install NVIDIA drivers and CUDA toolkit
+#   - 8GB+ VRAM recommended for 7B models
+#   - 16GB+ VRAM recommended for 13B models
+#
+# CPU-only:
+#   - Works but significantly slower (5-10x)
+#   - Use smaller models (llama3.2) for reasonable speed
+#   - Consider cloud engines for large PRs
+#
+# Check GPU usage: nvidia-smi (Linux/Windows) or Activity Monitor (macOS)
 
 # Repository access tokens
 tokens:
