@@ -61,7 +61,8 @@ If you prefer SaaS solutions that comment directly on PRs:
   - OpenAI API key (for GPT-4o), OR
   - OpenAI Codex CLI installed and authenticated, OR
   - Google AI API key (for Gemini), OR
-  - Google Gemini CLI installed and authenticated
+  - Google Gemini CLI installed and authenticated, OR
+  - Ollama installed locally (for local models - no API key needed)
 - GitHub token (for GitHub PRs) and/or Bitbucket app password (for Bitbucket PRs)
 
 ## Platform Support
@@ -278,6 +279,88 @@ engines:
 - Gemini CLI installed from: https://github.com/google-gemini/gemini-cli
 - Google account with AI access
 - Run `gemini auth` to sign in, or set `GEMINI_API_KEY` environment variable
+
+#### Option G: Ollama (Local Models)
+
+Run AI models entirely on your local machine. No API key required, no cloud services - complete privacy and offline capability.
+
+```yaml
+engine: "ollama"
+
+engines:
+  ollama:
+    host: "localhost:11434"
+    model: "codellama"
+    timeout: 300
+```
+
+**Pros:**
+- Complete privacy - code never leaves your machine
+- No API key required
+- No per-request costs
+- Works offline
+- Supports many open-source models
+
+**Requirements:**
+- Ollama installed: https://ollama.com/download
+- At least one model pulled (e.g., `ollama pull codellama`)
+- Ollama server running (`ollama serve`)
+
+**Recommended Models for Code Review:**
+
+| Model | Size | RAM Required | Notes |
+|-------|------|--------------|-------|
+| `codellama` | 7B | ~8GB | Default, optimized for code |
+| `codellama:13b` | 13B | ~16GB | Better understanding |
+| `llama3.2` | 3B | ~4GB | Fast, good for quick reviews |
+| `deepseek-coder-v2:lite` | 16B | ~12GB | Advanced code analysis |
+| `qwen2.5-coder` | 7B | ~8GB | Good code generation |
+
+**GPU Acceleration:**
+
+- **macOS (Apple Silicon)**: Automatic via Metal. M1/M2/M3 Macs work great.
+- **Linux/Windows (NVIDIA)**: Requires NVIDIA GPU with CUDA. 8GB+ VRAM for 7B models, 16GB+ for 13B.
+- **CPU-only**: Works but significantly slower. Use smaller models (llama3.2) for reasonable speed.
+
+**Remote Ollama:**
+
+You can also connect to Ollama running on another machine:
+
+```yaml
+engines:
+  ollama:
+    host: "192.168.1.100:11434"  # Remote server IP
+    model: "codellama"
+```
+
+Note: Ensure the remote Ollama server is accessible and consider security implications of sending code over the network.
+
+**Important: Output Quality Expectations**
+
+Local models have fundamental limitations compared to cloud APIs like Claude or GPT-4:
+
+| Aspect | Cloud APIs (Claude, GPT-4) | Local Models (Ollama) |
+|--------|---------------------------|----------------------|
+| Output format compliance | Excellent - follows templates precisely | Variable - may ignore structure |
+| Code understanding | Excellent | Good (especially codellama) |
+| Issue detection | Comprehensive | Basic to moderate |
+| Recommendation quality | Detailed, actionable | Often generic |
+| Model size | 100B+ parameters | 3B-16B parameters |
+
+**Why this happens:** Smaller models (7B-13B parameters) are optimized for code understanding but not for following complex output format instructions. The review prompt template requires precise markdown structure with specific sections, severity emojis, and formatting that smaller models often ignore or simplify.
+
+**Best use cases for Ollama:**
+- Privacy-sensitive code reviews (code never leaves your machine)
+- Quick, informal reviews where format doesn't matter
+- Offline environments
+- Cost savings (no API fees)
+- Learning/experimentation
+
+**When to use cloud APIs instead:**
+- Production code reviews requiring consistent, structured output
+- Complex PRs needing thorough analysis
+- When review format compliance matters
+- Team environments with standardized review formats
 
 ### 4. Configure repository access
 
@@ -529,7 +612,7 @@ See `config.example.yaml` for all available options:
 
 | Setting | Description |
 |---------|-------------|
-| `engine` | Active engine: `"claude-api"`, `"claude-cli"`, `"openai-api"`, `"openai-codex-cli"`, `"gemini-api"`, or `"gemini-cli"` |
+| `engine` | Active engine: `"claude-api"`, `"claude-cli"`, `"openai-api"`, `"openai-codex-cli"`, `"gemini-api"`, `"gemini-cli"`, or `"ollama"` |
 
 ### Engine-Specific Configuration
 
@@ -583,6 +666,17 @@ See `config.example.yaml` for all available options:
 | `path` | Path to gemini executable (leave empty for system PATH) |
 | `model` | Model to use (default: `gemini-2.0-flash`) |
 | `api_key` | Optional API key (uses Google auth or GEMINI_API_KEY if empty) |
+| `available_models` | List of models shown in `--switch-model` (customizable) |
+
+**Ollama (`engines.ollama`)**
+
+| Setting | Description |
+|---------|-------------|
+| `host` | Ollama server address (default: `localhost:11434`) |
+| `model` | Model to use (default: `codellama`) |
+| `timeout` | Request timeout in seconds (default: `300`) |
+| `num_ctx` | Optional context window size override |
+| `system_prompt` | Optional system prompt to guide the model |
 | `available_models` | List of models shown in `--switch-model` (customizable) |
 
 ### Customizing Available Models
@@ -849,6 +943,36 @@ Either:
 2. Or set the full path in config under `engines.gemini-cli.path: "/path/to/gemini"`
 3. After installation, run `gemini auth` to authenticate or set `GEMINI_API_KEY`
 
+### Ollama: "Cannot connect to Ollama"
+
+Ollama server is not running. Start it with:
+```bash
+ollama serve
+```
+
+### Ollama: "Model not found"
+
+The specified model is not installed. Pull it with:
+```bash
+ollama pull codellama
+```
+
+Run `ollama list` to see installed models.
+
+### Ollama: "Input too large for model"
+
+The PR diff exceeds the model's context length. Options:
+1. Use a model with larger context (e.g., `llama3.2` has 128K context)
+2. Review a smaller PR
+3. Reduce external context
+
+### Ollama: Request timeout
+
+Local inference can be slow, especially on CPU. Options:
+1. Increase timeout in config: `engines.ollama.timeout: 600`
+2. Use a smaller/faster model (e.g., `llama3.2`)
+3. Enable GPU acceleration for faster inference
+
 ### Test your configuration
 
 Run `wtp --test-config` to verify all tokens and credentials are working.
@@ -892,10 +1016,8 @@ pytest tests/ --cov=. --cov-report=html
 See `tests/README.md` for detailed test documentation.
 
 ## TODOs
-- external context
 - handler for duplicate pr-review files?
 - Add ESC to interrupt/ label to ctrl+c to cancel operation
-- Add Ollama support for local models
 
 ## Author
 
