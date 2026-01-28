@@ -28,6 +28,21 @@ class OllamaAPIEngine(BaseEngine):
     DEFAULT_MODEL = "codellama"
     DEFAULT_TIMEOUT = 300  # 5 minutes - local models can be slow
 
+    # Default system prompt to help local models follow the output format
+    # This significantly improves format compliance for smaller models
+    DEFAULT_SYSTEM_PROMPT = """You are a code review assistant. You MUST follow the exact output format specified in the user's instructions.
+
+CRITICAL REQUIREMENTS:
+1. Output ONLY valid markdown
+2. Follow the EXACT section structure provided (## Summary, ## Issues Found, ## Observations, ## Verdict, etc.)
+3. Use the severity emojis exactly as specified (e.g., "### 🔴 Critical:", "### 🟠 High:")
+4. Include file paths and line numbers for all issues
+5. Always include ALL required sections, even if empty
+6. Do NOT add extra commentary outside the specified format
+7. Do NOT skip any sections
+
+Your output will be parsed programmatically, so format compliance is essential."""
+
     # Approximate token limits for common models (conservative estimates)
     # Used for warning users about large diffs
     MODEL_CONTEXT_LIMITS = {
@@ -173,8 +188,13 @@ class OllamaAPIEngine(BaseEngine):
         base_url = self._get_base_url()
         model = self.config.get("model", self.DEFAULT_MODEL)
         timeout = self.config.get("timeout", self.DEFAULT_TIMEOUT)
-        system_prompt = self.config.get("system_prompt", "")
         num_ctx = self.config.get("num_ctx")  # Optional context window override
+
+        # Use configured system prompt, or default if not set
+        # The default helps local models follow the output format better
+        system_prompt = self.config.get("system_prompt")
+        if system_prompt is None:
+            system_prompt = self.DEFAULT_SYSTEM_PROMPT
 
         # Build messages
         messages = []

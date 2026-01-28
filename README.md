@@ -335,6 +335,33 @@ engines:
 
 Note: Ensure the remote Ollama server is accessible and consider security implications of sending code over the network.
 
+**Important: Output Quality Expectations**
+
+Local models have fundamental limitations compared to cloud APIs like Claude or GPT-4:
+
+| Aspect | Cloud APIs (Claude, GPT-4) | Local Models (Ollama) |
+|--------|---------------------------|----------------------|
+| Output format compliance | Excellent - follows templates precisely | Variable - may ignore structure |
+| Code understanding | Excellent | Good (especially codellama) |
+| Issue detection | Comprehensive | Basic to moderate |
+| Recommendation quality | Detailed, actionable | Often generic |
+| Model size | 100B+ parameters | 3B-16B parameters |
+
+**Why this happens:** Smaller models (7B-13B parameters) are optimized for code understanding but not for following complex output format instructions. The review prompt template requires precise markdown structure with specific sections, severity emojis, and formatting that smaller models often ignore or simplify.
+
+**Best use cases for Ollama:**
+- Privacy-sensitive code reviews (code never leaves your machine)
+- Quick, informal reviews where format doesn't matter
+- Offline environments
+- Cost savings (no API fees)
+- Learning/experimentation
+
+**When to use cloud APIs instead:**
+- Production code reviews requiring consistent, structured output
+- Complex PRs needing thorough analysis
+- When review format compliance matters
+- Team environments with standardized review formats
+
 ### 4. Configure repository access
 
 For both GitHub and Bitbucket private repositories, you need tokens:

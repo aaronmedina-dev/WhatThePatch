@@ -131,10 +131,11 @@ engines:
     # Example: num_ctx: 32768
     # num_ctx:
 
-    # Optional: System prompt to guide the model's behavior
-    # This can help improve code review quality
-    # Example: "You are an expert code reviewer. Be thorough but concise."
-    # system_prompt: ""
+    # Optional: Override the system prompt
+    # A default system prompt is included that helps local models follow
+    # the output format. Only override if you want custom behavior.
+    # Set to empty string "" to disable the system prompt entirely.
+    # system_prompt: "You are an expert code reviewer. Be thorough but concise."
 
     # Available models for --switch-model
     # Customize this list based on models you have installed
