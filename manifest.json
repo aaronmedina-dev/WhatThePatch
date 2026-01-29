@@ -13,6 +13,7 @@
     {"path": "requirements.txt", "required": true},
     {"path": "manifest.json", "required": true},
     {"path": "setup.py", "required": false},
+    {"path": "install.sh", "required": false},
     {"path": "config.example.yaml", "required": false},
     {"path": "prompt.md", "required": true, "preserve_user": true},
     {"path": "engines/__init__.py", "required": true},
