@@ -20,7 +20,10 @@ The goal isn't to replace human judgment, but to augment it - giving reviewers t
 
 ## How It Compares
 
-There are several AI-powered PR review tools available. Here's how WhatThePatch!? differs:
+
+
+<details>
+<summary><strong>🚀 WTP IN ACTION</strong> (click to expand)</summary>
 
 | Feature | WhatThePatch!? | CodeRabbit, PR-Agent, etc. |
 |---------|----------------|---------------------------|
@@ -48,9 +51,11 @@ There are several AI-powered PR review tools available. Here's how WhatThePatch!
 
 If you prefer SaaS solutions that comment directly on PRs:
 
-- **[CodeRabbit](https://coderabbit.ai)** - AI PR reviews for GitHub/GitLab
-- **[PR-Agent](https://github.com/Codium-ai/pr-agent)** - Open source, by CodiumAI
-- **[GitHub Copilot](https://github.com/features/copilot)** - Native GitHub integration
+### Status Check
+
+![Testing configuration](assets/wtp_status.png)
+
+### Configuration Test
 
 ## Requirements
 
@@ -91,19 +96,27 @@ The setup wizard will install dependencies and create the config file, but the `
 
 ## Quick Start
 
-Run the interactive setup wizard:
+### Option A: One-line install (recommended)
 
 ```bash
+curl -sSL https://raw.githubusercontent.com/aaronmedina-dev/WhatThePatch/main/install.sh | bash
+```
+
+### Option B: Clone and setup
+
+```bash
+git clone https://github.com/aaronmedina-dev/WhatThePatch.git
+cd WhatThePatch
 python setup.py
 ```
 
-This will:
-1. Install required dependencies
-2. Guide you through creating `config.yaml`
-3. Test your configuration
-4. Install the `wtp` CLI command
+The setup wizard will:
+- Install required dependencies
+- Guide you through configuration
+- Test your setup
+- Install the `wtp` CLI command
 
-Once complete, you can run reviews from anywhere:
+### Generate a review
 
 ```bash
 wtp --review https://github.com/owner/repo/pull/123
@@ -865,6 +878,14 @@ To remove the CLI command:
 ```bash
 python setup.py --uninstall
 ```
+
+## Uninstall
+
+```bash
+curl -sSL https://raw.githubusercontent.com/aaronmedina-dev/WhatThePatch/main/uninstall.sh | bash
+```
+
+This removes `~/.whatthepatch/` and the `wtp` CLI wrapper.
 
 ## Development
 

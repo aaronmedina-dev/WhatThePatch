@@ -34,6 +34,33 @@ ENGINES = {
     "gemini-cli": GeminiCLIEngine,
 }
 
+# Ollama engine - may be missing in partial updates from older versions
+# This is a one-time migration issue; running --update again will fix it
+OLLAMA_AVAILABLE = False
+try:
+    from .ollama_api import OllamaAPIEngine
+    ENGINES["ollama"] = OllamaAPIEngine
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    pass
+
+
+def check_incomplete_installation() -> str | None:
+    """
+    Check if installation is incomplete (missing files from partial update).
+    Returns warning message if incomplete, None if OK.
+    """
+    if not OLLAMA_AVAILABLE:
+        return (
+            "Your installation is incomplete - some engine files are missing.\n"
+            "This can happen when updating from an older version.\n"
+            "\n"
+            "To fix this, run:  wtp --update\n"
+            "\n"
+            "This will download all missing files including Ollama support."
+        )
+    return None
+
 
 def get_engine(engine_name: str, config: dict) -> BaseEngine:
     """

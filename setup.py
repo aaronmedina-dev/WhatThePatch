@@ -26,20 +26,36 @@ INSTALL_DIR = Path.home() / ".whatthepatch"
 CONFIG_PATH = INSTALL_DIR / "config.yaml"
 CONFIG_EXAMPLE_PATH = SCRIPT_DIR / "config.example.yaml"
 REQUIREMENTS_PATH = SCRIPT_DIR / "requirements.txt"
+MANIFEST_PATH = SCRIPT_DIR / "manifest.json"
 CLI_NAME = "wtp"
 
-# Files to copy to install directory
-INSTALL_FILES = [
-    "whatthepatch.py",
-    "prompt.md",
-    "banner.py",
-    "cli_utils.py",
-]
 
-# Directories to copy to install directory
-INSTALL_DIRS = [
-    "engines",
-]
+def load_manifest() -> dict:
+    """Load manifest.json for install file list."""
+    if MANIFEST_PATH.exists():
+        with open(MANIFEST_PATH) as f:
+            return json.load(f)
+    return {"files": [], "directories": []}
+
+
+def get_install_files() -> list[str]:
+    """Get list of files to install from manifest."""
+    manifest = load_manifest()
+    files = []
+    for entry in manifest.get("files", []):
+        if isinstance(entry, dict):
+            # Only include required files for install
+            if entry.get("required", True):
+                files.append(entry["path"])
+        else:
+            files.append(entry)
+    return files
+
+
+def get_install_dirs() -> list[str]:
+    """Get list of directories to install from manifest."""
+    manifest = load_manifest()
+    return manifest.get("directories", [])
 
 
 def print_header(text: str):
@@ -659,8 +675,8 @@ def install_files():
     INSTALL_DIR.mkdir(parents=True, exist_ok=True)
     print(f"Install directory: {INSTALL_DIR}")
 
-    # Copy files
-    for filename in INSTALL_FILES:
+    # Copy files (from manifest.json)
+    for filename in get_install_files():
         src = SCRIPT_DIR / filename
         dst = INSTALL_DIR / filename
 
@@ -668,11 +684,14 @@ def install_files():
             print(f"  Warning: {filename} not found in source directory")
             continue
 
+        # Ensure parent directory exists for nested files (e.g., engines/__init__.py)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+
         shutil.copy2(src, dst)
         print(f"  Copied: {filename}")
 
-    # Copy directories
-    for dirname in INSTALL_DIRS:
+    # Copy directories (from manifest.json)
+    for dirname in get_install_dirs():
         src = SCRIPT_DIR / dirname
         dst = INSTALL_DIR / dirname
 
