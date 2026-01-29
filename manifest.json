@@ -1,0 +1,38 @@
+{
+  "version": "1.3.0",
+  "description": "WhatThePatch update manifest - lists all files for self-update mechanism",
+  "files": [
+    {"path": "whatthepatch.py", "required": true},
+    {"path": "cli_utils.py", "required": true},
+    {"path": "banner.py", "required": true},
+    {"path": "requirements.txt", "required": true},
+    {"path": "manifest.json", "required": true},
+    {"path": "setup.py", "required": false},
+    {"path": "config.example.yaml", "required": false},
+    {"path": "prompt.md", "required": true, "preserve_user": true},
+    {"path": "engines/__init__.py", "required": true},
+    {"path": "engines/base.py", "required": true},
+    {"path": "engines/claude_api.py", "required": true},
+    {"path": "engines/claude_cli.py", "required": true},
+    {"path": "engines/openai_api.py", "required": true},
+    {"path": "engines/openai_codex_cli.py", "required": true},
+    {"path": "engines/gemini_api.py", "required": true},
+    {"path": "engines/gemini_cli.py", "required": true},
+    {"path": "engines/ollama_api.py", "required": true},
+    {"path": "docs/configuration.md", "required": false},
+    {"path": "docs/engines.md", "required": false},
+    {"path": "docs/external-context.md", "required": false},
+    {"path": "docs/prompts.md", "required": false},
+    {"path": "docs/troubleshooting.md", "required": false},
+    {"path": "prompt-templates/backend-prompt.md", "required": false},
+    {"path": "prompt-templates/devops-prompt.md", "required": false},
+    {"path": "prompt-templates/frontend-prompt.md", "required": false},
+    {"path": "prompt-templates/microservices-prompt.md", "required": false}
+  ],
+  "directories": [
+    "engines",
+    "docs",
+    "prompt-templates"
+  ],
+  "cleanup": []
+}

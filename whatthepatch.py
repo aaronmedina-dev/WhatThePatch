@@ -2267,13 +2267,16 @@ def edit_prompt():
 GITHUB_REPO = "aaronmedina-dev/WhatThePatch"
 GITHUB_RAW_BASE = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main"
 
-# Files that can be updated from GitHub
+# Files that can be updated from GitHub (legacy fallback if manifest.json not available)
 UPDATABLE_FILES = [
     "whatthepatch.py",
     "cli_utils.py",
     "banner.py",
     "prompt.md",
     "requirements.txt",
+    "manifest.json",
+    "setup.py",
+    "config.example.yaml",
     "engines/__init__.py",
     "engines/base.py",
     "engines/claude_api.py",
@@ -2282,6 +2285,16 @@ UPDATABLE_FILES = [
     "engines/openai_codex_cli.py",
     "engines/gemini_api.py",
     "engines/gemini_cli.py",
+    "engines/ollama_api.py",
+    "docs/configuration.md",
+    "docs/engines.md",
+    "docs/external-context.md",
+    "docs/prompts.md",
+    "docs/troubleshooting.md",
+    "prompt-templates/backend-prompt.md",
+    "prompt-templates/devops-prompt.md",
+    "prompt-templates/frontend-prompt.md",
+    "prompt-templates/microservices-prompt.md",
 ]
 
 
@@ -2399,6 +2412,31 @@ def _update_via_git(repo_root: Path) -> bool:
         return False
 
 
+def _fetch_manifest() -> dict | None:
+    """Fetch manifest.json from GitHub. Returns parsed manifest or None if unavailable."""
+    import json
+
+    manifest_url = f"{GITHUB_RAW_BASE}/manifest.json"
+    try:
+        response = requests.get(manifest_url, timeout=30)
+        if response.status_code == 200:
+            return json.loads(response.text)
+    except Exception:
+        pass
+    return None
+
+
+def _get_files_from_manifest(manifest: dict) -> list[str]:
+    """Extract file paths from manifest."""
+    files = []
+    for file_entry in manifest.get("files", []):
+        if isinstance(file_entry, dict):
+            files.append(file_entry["path"])
+        else:
+            files.append(file_entry)
+    return files
+
+
 def _update_via_download(target_dir: Path) -> bool:
     """Update by downloading files from GitHub. Returns True on success."""
     info_table = create_key_value_table()
@@ -2407,17 +2445,30 @@ def _update_via_download(target_dir: Path) -> bool:
     console.print(info_table)
     console.print()
 
-    # Ensure engines directory exists
-    engines_dir = target_dir / "engines"
-    engines_dir.mkdir(parents=True, exist_ok=True)
+    # Try to fetch manifest for file list, fall back to legacy list
+    manifest = _fetch_manifest()
+    if manifest:
+        files_to_update = _get_files_from_manifest(manifest)
+        manifest_version = manifest.get("version", "unknown")
+        console.print(f"[dim]Using manifest v{manifest_version} ({len(files_to_update)} files)[/dim]")
+    else:
+        files_to_update = UPDATABLE_FILES
+        console.print(f"[dim]Using legacy file list ({len(files_to_update)} files)[/dim]")
+    console.print()
+
+    # Ensure required directories exist
+    for directory in ["engines", "docs", "prompt-templates"]:
+        dir_path = target_dir / directory
+        dir_path.mkdir(parents=True, exist_ok=True)
 
     updated = []
     failed = []
+    skipped = []
 
     with get_progress_spinner() as progress:
         task = progress.add_task("Downloading files...", total=None)
 
-        for filename in UPDATABLE_FILES:
+        for filename in files_to_update:
             url = f"{GITHUB_RAW_BASE}/{filename}"
             dest = target_dir / filename
 
@@ -2430,6 +2481,9 @@ def _update_via_download(target_dir: Path) -> bool:
                 if response.status_code == 200:
                     dest.write_text(response.text)
                     updated.append(filename)
+                elif response.status_code == 404:
+                    # File doesn't exist in repo (may be optional)
+                    skipped.append((filename, "not found in repo"))
                 else:
                     failed.append((filename, f"HTTP {response.status_code}"))
             except Exception as e:
@@ -2438,6 +2492,8 @@ def _update_via_download(target_dir: Path) -> bool:
     # Show results
     if updated:
         console.print(f"[green]Updated:[/green] {len(updated)} files")
+    if skipped:
+        console.print(f"[yellow]Skipped:[/yellow] {len(skipped)} files (not in repo)")
     if failed:
         console.print(f"[red]Failed:[/red] {len(failed)} files")
         for filename, error in failed:
@@ -2445,6 +2501,7 @@ def _update_via_download(target_dir: Path) -> bool:
 
     console.print()
 
+    # Consider success if we updated files and only had skips (not hard failures)
     if updated and not failed:
         print_success("Update complete!", {"Files updated": str(len(updated))})
         return True
@@ -2550,6 +2607,19 @@ def main():
     # Show banner for help
     if len(sys.argv) == 1 or "-h" in sys.argv or "--help" in sys.argv:
         print_banner()
+
+    # Check for incomplete installation (missing files from partial update)
+    from engines import check_incomplete_installation
+    incomplete_warning = check_incomplete_installation()
+    if incomplete_warning:
+        console.print()
+        console.print(Panel(
+            incomplete_warning,
+            title="[bold yellow]Incomplete Installation[/bold yellow]",
+            border_style="yellow",
+            padding=(1, 2),
+        ))
+        console.print()
 
     parser = WTPArgumentParser(
         prog="wtp",
