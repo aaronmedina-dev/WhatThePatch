@@ -38,7 +38,7 @@ echo "Running setup..."
 echo ""
 
 cd "$EXTRACT_DIR"
-python3 setup.py
+python3 setup.py < /dev/tty
 
 echo ""
 echo "Installation complete!"
