@@ -818,6 +818,9 @@ def install_files():
             print(f"  Warning: {filename} not found in source directory")
             continue
 
+        # Ensure parent directory exists for nested files (e.g., engines/__init__.py)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+
         shutil.copy2(src, dst)
         print(f"  Copied: {filename}")
 

@@ -31,7 +31,7 @@ if [ $FOUND -eq 0 ]; then
 fi
 
 echo ""
-read -p "Remove WhatThePatch? [y/N] " -n 1 -r
+read -p "Remove WhatThePatch? [y/N] " -n 1 -r < /dev/tty
 echo ""
 
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
