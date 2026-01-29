@@ -43,7 +43,7 @@ from rich.panel import Panel
 # Wrapper functions to avoid circular imports with whatthepatch.py
 def get_file_path(filename: str) -> Path:
     """Get file path - imports from whatthepatch to avoid circular import at module load."""
-    from whatthepatch import get_file_path as _get_file_path
+    from update import get_file_path as _get_file_path
     return _get_file_path(filename)
 
 

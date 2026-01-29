@@ -37,8 +37,10 @@ With AI-assisted coding, changes are being pushed at unprecedented speed. WhatTh
 | Custom review criteria | Fully editable prompts | Fixed or limited |
 | One-off reviews | No setup required | Subscription needed |
 
+
+
 <details>
-<summary><strong>WTP in Action</strong> (click to expand)</summary>
+<summary><strong>🚀 WTP IN ACTION</strong> (click to expand)</summary>
 
 <br>
 

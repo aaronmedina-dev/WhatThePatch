@@ -6,6 +6,8 @@
     {"path": "url_context.py", "required": true},
     {"path": "pr_providers.py", "required": true},
     {"path": "commands.py", "required": true},
+    {"path": "output.py", "required": true},
+    {"path": "update.py", "required": true},
     {"path": "cli_utils.py", "required": true},
     {"path": "banner.py", "required": true},
     {"path": "requirements.txt", "required": true},
