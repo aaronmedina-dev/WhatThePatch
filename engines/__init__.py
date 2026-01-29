@@ -11,9 +11,7 @@ Available engines:
 - openai-codex-cli: OpenAI Codex CLI (uses existing ChatGPT auth)
 - gemini-api: Google Gemini API (direct)
 - gemini-cli: Google Gemini CLI (uses existing Google auth)
-
-Future engines:
-- ollama: Local Ollama models
+- ollama: Local Ollama models (no API key needed)
 """
 
 from .base import BaseEngine, EngineError

@@ -311,6 +311,62 @@ def test_gemini_cli() -> bool:
         return False
 
 
+def check_ollama() -> tuple[bool, str]:
+    """Check if Ollama server is running and return status."""
+    try:
+        import requests
+        response = requests.get("http://localhost:11434/api/tags", timeout=5)
+        if response.status_code == 200:
+            models = response.json().get("models", [])
+            model_names = [m.get("name", "").split(":")[0] for m in models]
+            if models:
+                return True, f"Server running, models: {', '.join(model_names[:3])}"
+            return True, "Server running, no models installed"
+        return False, f"Server responded with status {response.status_code}"
+    except Exception:
+        return False, "Server not running"
+
+
+def test_ollama(model: str = "codellama") -> tuple[bool, str]:
+    """Test Ollama with a simple prompt."""
+    try:
+        import requests
+
+        # Check server first
+        is_running, status = check_ollama()
+        if not is_running:
+            return False, f"Cannot connect to Ollama. {status}"
+
+        # Check if model is available
+        response = requests.get("http://localhost:11434/api/tags", timeout=5)
+        models = response.json().get("models", [])
+        model_names = [m.get("name", "") for m in models]
+        base_names = [m.split(":")[0] for m in model_names]
+
+        if model not in model_names and model not in base_names and f"{model}:latest" not in model_names:
+            available = ", ".join(base_names[:5]) if base_names else "none"
+            return False, f"Model '{model}' not installed. Available: {available}. Run: ollama pull {model}"
+
+        # Test generation
+        print(f"  Testing model '{model}'...")
+        response = requests.post(
+            "http://localhost:11434/api/chat",
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": "Say 'OK' and nothing else."}],
+                "stream": False,
+            },
+            timeout=120,
+        )
+
+        if response.status_code == 200:
+            return True, f"Ollama working with {model}"
+        return False, f"Generation failed: {response.status_code}"
+
+    except Exception as e:
+        return False, f"Test failed: {e}"
+
+
 def test_github_token(token: str) -> bool:
     """Test if a GitHub token is valid."""
     try:
@@ -416,10 +472,11 @@ def create_config():
             "openai-codex-cli - OpenAI Codex CLI (uses your ChatGPT auth)",
             "gemini-api - Google Gemini API (requires API key)",
             "gemini-cli - Google Gemini CLI (uses your existing Google auth)",
+            "ollama - Ollama local LLMs (no API key needed, runs locally)",
         ],
         default=1,
     )
-    engine_names = ["claude-api", "claude-cli", "openai-api", "openai-codex-cli", "gemini-api", "gemini-cli"]
+    engine_names = ["claude-api", "claude-cli", "openai-api", "openai-codex-cli", "gemini-api", "gemini-cli", "ollama"]
     config["engine"] = engine_names[engine_choice]
 
     # Initialize engines section
@@ -453,6 +510,11 @@ def create_config():
             "model": "gemini-2.0-flash",
             "api_key": "",
         },
+        "ollama": {
+            "host": "localhost:11434",
+            "model": "codellama",
+            "timeout": 300,
+        },
     }
 
     # Configure API key based on selected engine
@@ -484,6 +546,62 @@ def create_config():
         if prompt_yes_no("Configure an API key instead?", default=False):
             api_key = prompt("Enter your Google AI API key")
             config["engines"]["gemini-cli"]["api_key"] = api_key
+    elif config["engine"] == "ollama":
+        print("\n" + "="*50)
+        print("Ollama Configuration")
+        print("="*50)
+        print("\nOllama runs AI models locally on your machine.")
+        print("No API key needed - complete privacy!")
+        print("\nPrerequisites:")
+        print("  1. Install Ollama: https://ollama.com/download")
+        print("  2. Start the server: ollama serve")
+        print("  3. Pull a model: ollama pull codellama")
+
+        # Host configuration
+        print("\n--- Server Configuration ---")
+        print("For local installation, use the default.")
+        print("For remote Ollama, enter the server address (e.g., 192.168.1.100:11434)")
+        host = prompt("Ollama host", default="localhost:11434")
+        config["engines"]["ollama"]["host"] = host
+
+        # Model selection
+        print("\n--- Model Selection ---")
+        print("Recommended models for code review:")
+        print("  [1] codellama     - 7B params, ~8GB RAM, code-optimized (default)")
+        print("  [2] codellama:13b - 13B params, ~16GB RAM, better understanding")
+        print("  [3] llama3.2      - 3B params, ~4GB RAM, fast but less accurate")
+        print("  [4] qwen2.5-coder - 7B params, ~8GB RAM, good code generation")
+        print("  [5] Custom        - Enter any model name")
+
+        model_choice = prompt("Select model (1-5)", default="1")
+        model_map = {
+            "1": "codellama",
+            "2": "codellama:13b",
+            "3": "llama3.2",
+            "4": "qwen2.5-coder",
+        }
+        if model_choice in model_map:
+            model = model_map[model_choice]
+        elif model_choice == "5":
+            model = prompt("Enter model name", default="codellama")
+        else:
+            model = "codellama"
+        config["engines"]["ollama"]["model"] = model
+
+        # GPU info
+        print("\n--- Performance Notes ---")
+        print("GPU Acceleration:")
+        print("  - macOS Apple Silicon: Automatic via Metal")
+        print("  - NVIDIA GPU: Automatic if CUDA installed")
+        print("  - CPU-only: Works but slower (use smaller models)")
+        ram_estimates = {
+            "codellama": "8GB RAM/VRAM",
+            "codellama:13b": "16GB RAM/VRAM",
+            "llama3.2": "4GB RAM/VRAM",
+            "qwen2.5-coder": "8GB RAM/VRAM",
+        }
+        print(f"\nSelected model '{model}' requires approximately:")
+        print(f"  {ram_estimates.get(model, '8GB+ RAM/VRAM (varies by model)')}")
     else:
         print("\nClaude CLI will use your existing authentication.")
         if prompt_yes_no("Configure an Anthropic API key as backup?", default=False):
@@ -627,6 +745,22 @@ def run_tests():
                 all_passed = False
         else:
             print("  Gemini CLI not found. Install from: https://github.com/google-gemini/gemini-cli")
+            all_passed = False
+    elif engine == "ollama":
+        print("\nTesting Ollama...")
+        model = config.get("engines", {}).get("ollama", {}).get("model", "codellama")
+        is_running, status = check_ollama()
+        if is_running:
+            print(f"  {status}")
+            success, message = test_ollama(model)
+            if success:
+                print(f"  {message}")
+            else:
+                print(f"  {message}")
+                all_passed = False
+        else:
+            print(f"  Ollama not running. Start with: ollama serve")
+            print(f"  Then pull a model: ollama pull {model}")
             all_passed = False
     else:
         print(f"\nUnknown engine: {engine}")
