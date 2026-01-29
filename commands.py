@@ -27,6 +27,7 @@ from cli_utils import (
     print_success,
     print_info,
     print_panel,
+    print_commands,
     create_key_value_table,
     create_status_table,
     format_status,
