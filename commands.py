@@ -956,3 +956,38 @@ def edit_prompt():
         print(f"Please edit manually: {prompt_path}")
         sys.exit(1)
 
+
+def edit_config():
+    """Open the config file in the default editor."""
+    config_path = get_file_path("config.yaml")
+
+    if not config_path.exists():
+        print_error(
+            "config.yaml not found",
+            [f"Expected at: {config_path}", "Run 'python setup.py' to configure."]
+        )
+        sys.exit(1)
+
+    # Determine editor
+    editor = os.environ.get("EDITOR") or os.environ.get("VISUAL")
+
+    if not editor:
+        # Try common editors
+        for ed in ["code", "nano", "vim", "vi"]:
+            if shutil.which(ed):
+                editor = ed
+                break
+
+    if not editor:
+        print_info("No editor found. Please edit manually:")
+        console.print(f"  [cyan]{config_path}[/cyan]")
+        return
+
+    print(f"Opening {config_path} in {editor}...")
+    try:
+        subprocess.run([editor, str(config_path)])
+    except Exception as e:
+        print_warning(f"Could not open editor: {e}")
+        print_info("Please edit manually:")
+        console.print(f"  [cyan]{config_path}[/cyan]")
+
