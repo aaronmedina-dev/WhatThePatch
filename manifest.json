@@ -3,6 +3,9 @@
   "description": "WhatThePatch update manifest - lists all files for self-update mechanism",
   "files": [
     {"path": "whatthepatch.py", "required": true},
+    {"path": "url_context.py", "required": true},
+    {"path": "pr_providers.py", "required": true},
+    {"path": "commands.py", "required": true},
     {"path": "cli_utils.py", "required": true},
     {"path": "banner.py", "required": true},
     {"path": "requirements.txt", "required": true},
