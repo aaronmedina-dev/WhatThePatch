@@ -108,6 +108,7 @@ from commands import (
     switch_model,
     show_prompt,
     edit_prompt,
+    edit_config,
     ENGINE_DEFAULT_MODELS,
 )
 
@@ -346,6 +347,11 @@ Author:
         action="store_true",
         help="Open the prompt template in your editor",
     )
+    prompt_group.add_argument(
+        "--edit-config",
+        action="store_true",
+        help="Open config.yaml in your editor",
+    )
 
     # Utility commands
     util_group = parser.add_argument_group("Utility")
@@ -367,6 +373,10 @@ Author:
 
     if args.edit_prompt:
         edit_prompt()
+        return
+
+    if args.edit_config:
+        edit_config()
         return
 
     if args.status:
