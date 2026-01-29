@@ -50,6 +50,10 @@ With AI-assisted coding, changes are being pushed at unprecedented speed. WhatTh
 
 ![Interactive setup wizard](assets/wtp_setup.png)
 
+### Status Check
+
+![Testing configuration](assets/wtp_status.png)
+
 ### Configuration Test
 
 ![Testing configuration](assets/wtp_test-config.png)
