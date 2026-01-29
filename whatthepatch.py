@@ -19,19 +19,9 @@ from __future__ import annotations
 __version__ = "1.3.0"
 
 import argparse
-import json
-import time
-import os
-import platform
 import re
-import shutil
-import subprocess
 import sys
-import webbrowser
 from pathlib import Path
-from urllib.parse import urlparse
-
-import hashlib
 
 # Track missing dependencies for helpful error messages
 _MISSING_DEPS = []
