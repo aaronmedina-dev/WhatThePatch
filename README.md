@@ -69,19 +69,27 @@ With AI-assisted coding, changes are being pushed at unprecedented speed. WhatTh
 
 ## Quick Start
 
-### 1. Run the setup wizard
+### Option A: One-line install (recommended)
 
 ```bash
+curl -sSL https://raw.githubusercontent.com/aaronmedina-dev/WhatThePatch/main/install.sh | bash
+```
+
+### Option B: Clone and setup
+
+```bash
+git clone https://github.com/aaronmedina-dev/WhatThePatch.git
+cd WhatThePatch
 python setup.py
 ```
 
-This will:
+The setup wizard will:
 - Install required dependencies
 - Guide you through configuration
 - Test your setup
 - Install the `wtp` CLI command
 
-### 2. Generate a review
+### Generate a review
 
 ```bash
 wtp --review https://github.com/owner/repo/pull/123
@@ -262,6 +270,14 @@ hardcoded localhost URL in the setup testing functions.
 | macOS | Full support |
 | Linux | Full support |
 | Windows | Core works, CLI install not supported (use `python whatthepatch.py` directly) |
+
+## Uninstall
+
+```bash
+curl -sSL https://raw.githubusercontent.com/aaronmedina-dev/WhatThePatch/main/uninstall.sh | bash
+```
+
+This removes `~/.whatthepatch/` and the `wtp` CLI wrapper.
 
 ## Development
 
