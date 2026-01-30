@@ -5,6 +5,8 @@ Uses the OpenAI Codex CLI to generate PR reviews.
 Leverages existing authentication (ChatGPT Plus/Pro/Team plans).
 """
 
+from __future__ import annotations
+
 import re
 import shutil
 import subprocess

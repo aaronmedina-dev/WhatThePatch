@@ -5,6 +5,8 @@ Uses the Google Generative AI Python SDK to generate PR reviews.
 Requires a Google AI API key.
 """
 
+from __future__ import annotations
+
 from typing import Optional
 
 from .base import BaseEngine, EngineError

@@ -5,6 +5,8 @@ Uses the Anthropic Python SDK to generate PR reviews.
 Requires an Anthropic API key.
 """
 
+from __future__ import annotations
+
 from typing import Optional
 
 from .base import BaseEngine, EngineError

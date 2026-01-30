@@ -5,6 +5,8 @@ Uses the Claude Code CLI to generate PR reviews.
 Leverages existing authentication (team plans, OAuth).
 """
 
+from __future__ import annotations
+
 import json
 import shutil
 import subprocess

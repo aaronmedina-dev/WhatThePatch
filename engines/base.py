@@ -4,6 +4,8 @@ Base engine interface for AI providers.
 All AI engines must inherit from BaseEngine and implement the required methods.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import Optional
 

@@ -5,6 +5,8 @@ Uses the Ollama REST API to generate PR reviews locally.
 No API key required - runs entirely on local machine.
 """
 
+from __future__ import annotations
+
 from typing import Optional
 
 import requests
