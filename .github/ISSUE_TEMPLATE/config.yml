@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/aaronmedina-dev/WhatThePatch/tree/main/docs
+    about: Read the docs (engines, configuration, external context, prompts, troubleshooting).
+  - name: README (Quick Start)
+    url: https://github.com/aaronmedina-dev/WhatThePatch#readme
+    about: Install and run basics.
+

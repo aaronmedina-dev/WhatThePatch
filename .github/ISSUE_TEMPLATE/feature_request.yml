@@ -1,0 +1,62 @@
+name: "Feature request"
+description: "Suggest an idea or enhancement for WhatThePatch"
+title: "[Feature] <short summary>"
+labels: ["enhancement"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! Share the problem, your proposed solution, and any alternatives you considered.
+
+  - type: input
+    id: wtp_version
+    attributes:
+      label: WhatThePatch version (optional)
+      description: Output of `wtp --version` (helps with context)
+      placeholder: e.g., 1.3.1
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem does this feature solve? Why is it important?
+      placeholder: As a <role>, I want <capability> so that <value>…
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should WTP do? Include UI/CLI examples if relevant.
+      placeholder: Command/flags, config keys, expected behavior…
+      render: bash
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      placeholder: Other approaches or why they don’t fit…
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Define clear completion criteria.
+      placeholder: Given/When/Then, examples, or test ideas…
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Priority and impact
+      description: Who benefits? How often? What’s the risk of not doing it?
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context / mockups / links
+      placeholder: Screenshots, references, related issues/PRs…
+
