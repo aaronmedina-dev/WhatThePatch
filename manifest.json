@@ -1,8 +1,9 @@
 {
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "WhatThePatch update manifest - lists all files for self-update mechanism",
   "files": [
     {"path": "whatthepatch.py", "required": true},
+    {"path": "warnings_config.py", "required": true},
     {"path": "url_context.py", "required": true},
     {"path": "pr_providers.py", "required": true},
     {"path": "commands.py", "required": true},
