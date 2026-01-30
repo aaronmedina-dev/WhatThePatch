@@ -214,3 +214,10 @@ ticket:
 
   # Fallback if no ticket ID found
   fallback: "NO-TICKET"
+
+# Warning suppression
+# Some systems (particularly Python 3.9 with LibreSSL) may show SSL-related
+# warnings from urllib3. These warnings don't affect functionality but can
+# be suppressed if desired.
+#
+# suppress_ssl_warning: true

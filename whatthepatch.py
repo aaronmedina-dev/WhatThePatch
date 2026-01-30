@@ -16,7 +16,11 @@ Example:
 
 from __future__ import annotations
 
-__version__ = "1.3.3"
+__version__ = "1.3.4"
+
+# Configure warning suppression FIRST, before any imports that may trigger warnings
+# This allows user-configurable suppression of warnings like urllib3 SSL warnings
+import warnings_config  # noqa: F401 - imported for side effects
 
 import argparse
 import re
