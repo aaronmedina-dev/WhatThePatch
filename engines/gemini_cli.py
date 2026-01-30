@@ -5,6 +5,8 @@ Uses the Gemini CLI to generate PR reviews.
 Leverages existing Google Cloud authentication or API key.
 """
 
+from __future__ import annotations
+
 import shutil
 import subprocess
 import tempfile

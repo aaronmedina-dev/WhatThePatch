@@ -14,6 +14,8 @@ Available engines:
 - ollama: Local Ollama models (no API key needed)
 """
 
+from __future__ import annotations
+
 from .base import BaseEngine, EngineError
 from .claude_api import ClaudeAPIEngine
 from .claude_cli import ClaudeCLIEngine

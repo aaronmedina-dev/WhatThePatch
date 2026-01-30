@@ -5,6 +5,8 @@ Uses the OpenAI Python SDK to generate PR reviews.
 Requires an OpenAI API key.
 """
 
+from __future__ import annotations
+
 from typing import Optional
 
 from .base import BaseEngine, EngineError
