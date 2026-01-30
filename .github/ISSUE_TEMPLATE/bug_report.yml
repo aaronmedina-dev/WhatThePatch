@@ -1,0 +1,115 @@
+name: "Bug report"
+description: "Report a problem to help us improve WhatThePatch"
+title: "[Bug] <short summary>"
+labels: ["bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please provide as much detail as possible so we can reproduce and fix it quickly.
+
+  - type: input
+    id: wtp_version
+    attributes:
+      label: WhatThePatch version
+      description: Output of `wtp --version` (or `__version__` from whatthepatch.py)
+      placeholder: e.g., 1.3.1
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install_mode
+    attributes:
+      label: Install mode
+      description: How did you install/run WTP?
+      options:
+        - Installed CLI (~/.whatthepatch, via setup/install.sh)
+        - From git repo (python whatthepatch.py)
+        - Standalone script
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS
+        - Linux
+        - Windows (manual run)
+    validations:
+      required: true
+
+  - type: input
+    id: python_version
+    attributes:
+      label: Python version
+      placeholder: e.g., 3.10.14
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear and concise description of the problem.
+      placeholder: Briefly describe the issue…
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide exact steps/commands to reproduce.
+      placeholder: |
+        1. Run `wtp --review <URL>`
+        2. …
+        3. …
+      render: bash
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior / logs
+      description: Include any error output or screenshots. Redact sensitive info.
+      placeholder: Paste errors or attach images…
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: engines
+    attributes:
+      label: Engine configuration
+      description: Which engine/model is active? Include `wtp --status` snippet if possible.
+      placeholder: e.g., claude-api (claude-sonnet-4-20250514)
+      render: text
+
+  - type: textarea
+    id: context
+    attributes:
+      label: External context usage
+      description: If you used `--context`, list the files/URLs added (redact sensitive info).
+
+  - type: checkboxes
+    id: sanity
+    attributes:
+      label: Sanity checks
+      options:
+        - label: I can reproduce this on the latest release
+          required: true
+        - label: I cleared the URL cache if relevant (`rm -rf ~/.whatthepatch/url_cache/`)
+          required: false
+

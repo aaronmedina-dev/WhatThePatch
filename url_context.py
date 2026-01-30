@@ -9,6 +9,8 @@ This module handles:
 - Context formatting for AI prompts
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import os
