@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Troubleshooting - WhatThePatch">
+    <link rel="icon" type="image/svg+xml" href="assets/images/wtp-logo.svg">
+    <title>Troubleshooting - WhatThePatch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="docs-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <a href="index.html" class="logo">
+                        <img src="assets/images/wtp-logo.svg" alt="WTP">
+                        <span>WhatThePatch</span>
+                    </a>
+                    <span class="sidebar-version">v{{VERSION}}</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-section-title">Documentation</span>
+                    <a href="index.html" class="nav-item">Overview</a>
+                    <a href="installation.html" class="nav-item">Installation</a>
+                    <a href="quick-start.html" class="nav-item">Quick Start</a>
+                    <a href="engines.html" class="nav-item">AI Engines</a>
+                    <a href="troubleshooting.html" class="nav-item active">Troubleshooting</a>
+                </div>
+                <div class="nav-section">
+                    <span class="nav-section-title">Resources</span>
+                    <a href="https://github.com/aaronmedina-dev/WhatThePatch" class="nav-item" target="_blank">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        GitHub
+                    </a>
+                    <a href="https://github.com/aaronmedina-dev/WhatThePatch/issues" class="nav-item" target="_blank">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                        Report Issue
+                    </a>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="https://aaronmedina-dev.github.io/" class="back-to-main">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Back to Main Site
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="sidebar-toggle" aria-label="Toggle sidebar">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+                <a href="https://github.com/aaronmedina-dev/WhatThePatch" class="github-link" target="_blank">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    GitHub
+                </a>
+            </div>
+
+            <div class="content-container">
+                <div class="content">
+                    <h1>Troubleshooting</h1>
+                    <p class="lead">Common issues and how to fix them.</p>
+
+                    <h2>Common Issues</h2>
+
+                    <div class="issue-card">
+                        <h3>Command not found: wtp</h3>
+                        <p>The <code>wtp</code> command isn't in your PATH.</p>
+                        <div class="solution">
+                            <div class="solution-label">Solution</div>
+                            <p>Add <code>~/.local/bin</code> to your PATH. Add this to your <code>~/.bashrc</code> or <code>~/.zshrc</code>:</p>
+                            <code>export PATH="$HOME/.local/bin:$PATH"</code>
+                            <p style="margin-top: 8px;">Then restart your terminal or run <code>source ~/.bashrc</code></p>
+                        </div>
+                    </div>
+
+                    <div class="issue-card">
+                        <h3>API Key Invalid / Authentication Failed</h3>
+                        <p>The AI engine can't authenticate with your API key.</p>
+                        <div class="solution">
+                            <div class="solution-label">Solution</div>
+                            <ol>
+                                <li>Check your API key in <code>~/.whatthepatch/config.yaml</code></li>
+                                <li>Make sure there are no extra spaces or quotes around the key</li>
+                                <li>Verify the key is valid at your provider's dashboard</li>
+                                <li>Run <code>wtp --test-config</code> to verify</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div class="issue-card">
+                        <h3>Model not found</h3>
+                        <p>The specified model doesn't exist or isn't available.</p>
+                        <div class="solution">
+                            <div class="solution-label">Solution</div>
+                            <p>Run <code>wtp --switch-model</code> to select a valid model, or check your provider's documentation for available models.</p>
+                        </div>
+                    </div>
+
+                    <div class="issue-card">
+                        <h3>GitHub/Bitbucket 401/403 Error</h3>
+                        <p>Can't access the PR - authentication issue.</p>
+                        <div class="solution">
+                            <div class="solution-label">Solution</div>
+                            <ol>
+                                <li>For private repos, add your token to <code>config.yaml</code>:</li>
+                            </ol>
+                            <div class="code-block" style="margin-top: 8px;">
+                                <div class="code-header">
+                                    <span class="code-label">config.yaml</span>
+                                </div>
+                                <div class="code-content">tokens:
+  github: "ghp_your_token_here"
+  bitbucket_username: "your-username"
+  bitbucket_app_password: "your-app-password"</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="issue-card">
+                        <h3>SSL/urllib3 Warning</h3>
+                        <p>SSL warning appears on some Python/OS combinations.</p>
+                        <div class="solution">
+                            <div class="solution-label">Solution</div>
+                            <p>This warning doesn't affect functionality. To suppress it, add to your <code>config.yaml</code>:</p>
+                            <code>suppress_ssl_warning: true</code>
+                        </div>
+                    </div>
+
+                    <div class="issue-card">
+                        <h3>Missing Dependencies After Update</h3>
+                        <p>Import errors after running <code>--update</code>.</p>
+                        <div class="solution">
+                            <div class="solution-label">Solution</div>
+                            <p>Install the updated dependencies:</p>
+                            <code>pip install -r ~/.whatthepatch/requirements.txt</code>
+                        </div>
+                    </div>
+
+                    <h2>Diagnostic Commands</h2>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label">Terminal</span>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        <div class="code-content"><span class="comment"># Check current configuration</span>
+wtp --status
+
+<span class="comment"># Test AI engine connection</span>
+wtp --test-config
+
+<span class="comment"># Preview without API call</span>
+wtp --review &lt;PR_URL&gt; --dry-run --verbose
+
+<span class="comment"># Check version</span>
+wtp --version</div>
+                    </div>
+
+                    <h2>Getting Help</h2>
+                    <p>If you're still having issues:</p>
+                    <ul>
+                        <li>Check the <a href="https://github.com/aaronmedina-dev/WhatThePatch/blob/main/docs/troubleshooting.md" target="_blank">full troubleshooting guide</a></li>
+                        <li>Search <a href="https://github.com/aaronmedina-dev/WhatThePatch/issues" target="_blank">existing issues</a></li>
+                        <li><a href="https://github.com/aaronmedina-dev/WhatThePatch/issues/new" target="_blank">Open a new issue</a> with:
+                            <ul>
+                                <li>Output of <code>wtp --version</code></li>
+                                <li>Your OS and Python version</li>
+                                <li>The error message</li>
+                                <li>Steps to reproduce</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-content">
+                    <span>WhatThePatch by <a href="https://aaronmedina-dev.github.io/">Aaron Medina</a></span>
+                    <div class="footer-links">
+                        <a href="https://github.com/aaronmedina-dev/WhatThePatch" target="_blank">GitHub</a>
+                        <a href="https://github.com/aaronmedina-dev/WhatThePatch/issues" target="_blank">Issues</a>
+                    </div>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <button class="scroll-top" aria-label="Scroll to top">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M18 15l-6-6-6 6"/>
+        </svg>
+    </button>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>

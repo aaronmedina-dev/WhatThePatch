@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI Engines - WhatThePatch">
+    <link rel="icon" type="image/svg+xml" href="assets/images/wtp-logo.svg">
+    <title>AI Engines - WhatThePatch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="docs-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <a href="index.html" class="logo">
+                        <img src="assets/images/wtp-logo.svg" alt="WTP">
+                        <span>WhatThePatch</span>
+                    </a>
+                    <span class="sidebar-version">v{{VERSION}}</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-section-title">Documentation</span>
+                    <a href="index.html" class="nav-item">Overview</a>
+                    <a href="installation.html" class="nav-item">Installation</a>
+                    <a href="quick-start.html" class="nav-item">Quick Start</a>
+                    <a href="engines.html" class="nav-item active">AI Engines</a>
+                    <a href="troubleshooting.html" class="nav-item">Troubleshooting</a>
+                </div>
+                <div class="nav-section">
+                    <span class="nav-section-title">Resources</span>
+                    <a href="https://github.com/aaronmedina-dev/WhatThePatch" class="nav-item" target="_blank">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        GitHub
+                    </a>
+                    <a href="https://github.com/aaronmedina-dev/WhatThePatch/issues" class="nav-item" target="_blank">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                        Report Issue
+                    </a>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="https://aaronmedina-dev.github.io/" class="back-to-main">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Back to Main Site
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="sidebar-toggle" aria-label="Toggle sidebar">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+                <a href="https://github.com/aaronmedina-dev/WhatThePatch" class="github-link" target="_blank">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    GitHub
+                </a>
+            </div>
+
+            <div class="content-container">
+                <div class="content content-wide">
+                    <h1>AI Engines</h1>
+                    <p class="lead">WhatThePatch supports multiple AI providers. Choose based on your needs.</p>
+
+                    <h2>Engine Comparison</h2>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Engine</th>
+                                    <th>Type</th>
+                                    <th>Requires</th>
+                                    <th>Best For</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Claude API</strong></td>
+                                    <td><span class="badge badge-api">API</span></td>
+                                    <td>API key</td>
+                                    <td>Best overall quality</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Claude CLI</strong></td>
+                                    <td><span class="badge badge-cli">CLI</span></td>
+                                    <td>Claude Code installed</td>
+                                    <td>Team auth, no API key needed</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>OpenAI API</strong></td>
+                                    <td><span class="badge badge-api">API</span></td>
+                                    <td>API key</td>
+                                    <td>Fast, reliable</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>OpenAI Codex CLI</strong></td>
+                                    <td><span class="badge badge-cli">CLI</span></td>
+                                    <td>Codex CLI installed</td>
+                                    <td>ChatGPT Plus/Pro auth</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Gemini API</strong></td>
+                                    <td><span class="badge badge-api">API</span></td>
+                                    <td>API key</td>
+                                    <td>Google ecosystem</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Gemini CLI</strong></td>
+                                    <td><span class="badge badge-cli">CLI</span></td>
+                                    <td>Gemini CLI installed</td>
+                                    <td>Google Cloud auth</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ollama</strong></td>
+                                    <td><span class="badge badge-local">Local</span></td>
+                                    <td>Ollama installed</td>
+                                    <td>Privacy, offline, no API costs</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h2>API Engines</h2>
+                    <p>Require an API key in <code>config.yaml</code>:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label">config.yaml</span>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        <div class="code-content">engine: "claude-api"
+
+engines:
+  claude-api:
+    api_key: "sk-ant-api03-..."
+    model: "claude-sonnet-4-20250514"
+
+  openai-api:
+    api_key: "sk-..."
+    model: "gpt-4o"
+
+  gemini-api:
+    api_key: "AIza..."
+    model: "gemini-2.0-flash"</div>
+                    </div>
+
+                    <h2>CLI Engines</h2>
+                    <p>Use existing authentication from installed CLI tools. No API key needed in config.</p>
+
+                    <h3>Claude CLI</h3>
+                    <p>Install <a href="https://claude.ai/download" target="_blank">Claude Code</a>, then:</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label">Terminal</span>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        <div class="code-content">wtp --switch-engine
+<span class="comment"># Select "Claude CLI"</span></div>
+                    </div>
+
+                    <h3>OpenAI Codex CLI</h3>
+                    <p>Install via <code>npm install -g @openai/codex</code>, sign in, then switch engine.</p>
+
+                    <h3>Gemini CLI</h3>
+                    <p>Install from <a href="https://github.com/google-gemini/gemini-cli" target="_blank">gemini-cli</a>, authenticate with Google, then switch engine.</p>
+
+                    <h2>Local Engine (Ollama)</h2>
+                    <p>Run models locally with no API costs and complete privacy.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label">Terminal</span>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        <div class="code-content"><span class="comment"># Install Ollama</span>
+curl -fsSL https://ollama.com/install.sh | sh
+
+<span class="comment"># Pull a model</span>
+ollama pull codellama
+
+<span class="comment"># Start server (if not running)</span>
+ollama serve
+
+<span class="comment"># Switch to Ollama in WhatThePatch</span>
+wtp --switch-engine</div>
+                    </div>
+
+                    <p><strong>Note:</strong> Local models (7B-13B parameters) may produce less consistent output formatting compared to cloud APIs. Best for privacy-sensitive reviews or quick informal checks.</p>
+
+                    <h2>Which Engine to Choose?</h2>
+                    <ul>
+                        <li><strong>Best quality:</strong> Claude API or OpenAI API</li>
+                        <li><strong>Team/Enterprise auth:</strong> CLI engines (Claude CLI, Codex CLI)</li>
+                        <li><strong>Privacy/Offline:</strong> Ollama</li>
+                        <li><strong>Cost-conscious:</strong> Ollama or Gemini API (generous free tier)</li>
+                    </ul>
+
+                    <h2>Switching Engines</h2>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label">Terminal</span>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        <div class="code-content"><span class="comment"># Interactive engine selection</span>
+wtp --switch-engine
+
+<span class="comment"># Switch model for current engine</span>
+wtp --switch-model
+
+<span class="comment"># Test current engine</span>
+wtp --test-config</div>
+                    </div>
+
+                    <h2>More Information</h2>
+                    <p>See the <a href="https://github.com/aaronmedina-dev/WhatThePatch/blob/main/docs/engines.md" target="_blank">full engines documentation</a> for detailed configuration options.</p>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-content">
+                    <span>WhatThePatch by <a href="https://aaronmedina-dev.github.io/">Aaron Medina</a></span>
+                    <div class="footer-links">
+                        <a href="https://github.com/aaronmedina-dev/WhatThePatch" target="_blank">GitHub</a>
+                        <a href="https://github.com/aaronmedina-dev/WhatThePatch/issues" target="_blank">Issues</a>
+                    </div>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <button class="scroll-top" aria-label="Scroll to top">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M18 15l-6-6-6 6"/>
+        </svg>
+    </button>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>

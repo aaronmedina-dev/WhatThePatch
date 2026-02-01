@@ -1,0 +1,68 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'github-pages/**'
+      - 'manifest.json'
+      - '.github/workflows/deploy-docs.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout WhatThePatch repo
+        uses: actions/checkout@v4
+
+      - name: Get version from manifest
+        id: version
+        run: |
+          VERSION=$(jq -r '.version' manifest.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Deploying version: $VERSION"
+
+      - name: Replace version placeholder in HTML files
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          for file in github-pages/*.html; do
+            sed -i "s/{{VERSION}}/$VERSION/g" "$file"
+            echo "Updated: $file"
+          done
+
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: aaronmedina-dev/aaronmedina-dev.github.io
+          token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+          path: target-repo
+
+      - name: Copy documentation to target
+        run: |
+          # Remove old docs if they exist
+          rm -rf target-repo/whatthepatch
+
+          # Copy new docs
+          cp -r github-pages target-repo/whatthepatch
+
+          echo "Files copied to target-repo/whatthepatch:"
+          ls -la target-repo/whatthepatch/
+
+      - name: Commit and push to target repo
+        run: |
+          cd target-repo
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+          git add whatthepatch/
+
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update WhatThePatch docs to v${{ steps.version.outputs.version }}"
+            git push
+            echo "Deployed successfully!"
+          fi

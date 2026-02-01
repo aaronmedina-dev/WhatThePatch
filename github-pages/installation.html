@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Install WhatThePatch - AI-powered pull request review tool">
+    <link rel="icon" type="image/svg+xml" href="assets/images/wtp-logo.svg">
+    <title>Installation - WhatThePatch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="docs-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <a href="index.html" class="logo">
+                        <img src="assets/images/wtp-logo.svg" alt="WTP">
+                        <span>WhatThePatch</span>
+                    </a>
+                    <span class="sidebar-version">v{{VERSION}}</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-section-title">Documentation</span>
+                    <a href="index.html" class="nav-item">Overview</a>
+                    <a href="installation.html" class="nav-item active">Installation</a>
+                    <a href="quick-start.html" class="nav-item">Quick Start</a>
+                    <a href="engines.html" class="nav-item">AI Engines</a>
+                    <a href="troubleshooting.html" class="nav-item">Troubleshooting</a>
+                </div>
+                <div class="nav-section">
+                    <span class="nav-section-title">Resources</span>
+                    <a href="https://github.com/aaronmedina-dev/WhatThePatch" class="nav-item" target="_blank">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        GitHub
+                    </a>
+                    <a href="https://github.com/aaronmedina-dev/WhatThePatch/issues" class="nav-item" target="_blank">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                        Report Issue
+                    </a>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="https://aaronmedina-dev.github.io/" class="back-to-main">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Back to Main Site
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="sidebar-toggle" aria-label="Toggle sidebar">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+                <a href="https://github.com/aaronmedina-dev/WhatThePatch" class="github-link" target="_blank">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    GitHub
+                </a>
+            </div>
+
+            <div class="content-container">
+                <div class="content">
+                    <h1>Installation</h1>
+                    <p class="lead">Get WhatThePatch up and running in minutes.</p>
+
+                    <h2>Prerequisites</h2>
+                    <ul>
+                        <li><strong>Python 3.9+</strong> - Check with <code>python3 --version</code></li>
+                        <li><strong>pip</strong> - Python package manager</li>
+                        <li><strong>curl</strong> - For the one-liner install</li>
+                    </ul>
+
+                    <h2>Quick Install (Recommended)</h2>
+                    <p>Run this single command to install WhatThePatch:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label">Terminal</span>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        <div class="code-content">curl -fsSL https://raw.githubusercontent.com/aaronmedina-dev/WhatThePatch/main/install.sh | bash</div>
+                    </div>
+
+                    <p>This will:</p>
+                    <ol>
+                        <li>Download WhatThePatch to <code>~/.whatthepatch/</code></li>
+                        <li>Install Python dependencies</li>
+                        <li>Guide you through initial configuration</li>
+                        <li>Create the <code>wtp</code> command</li>
+                    </ol>
+
+                    <h2>Manual Installation</h2>
+                    <p>If you prefer to install manually:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label">Terminal</span>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        <div class="code-content"><span class="comment"># Clone the repository</span>
+git clone https://github.com/aaronmedina-dev/WhatThePatch.git
+cd WhatThePatch
+
+<span class="comment"># Run the setup wizard</span>
+python3 setup.py</div>
+                    </div>
+
+                    <h2>Verify Installation</h2>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label">Terminal</span>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        <div class="code-content"><span class="comment"># Check version</span>
+wtp --version
+
+<span class="comment"># View current configuration</span>
+wtp --status
+
+<span class="comment"># Test your AI engine connection</span>
+wtp --test-config</div>
+                    </div>
+
+                    <h2>Updating</h2>
+                    <p>To update to the latest version:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label">Terminal</span>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        <div class="code-content">wtp --update</div>
+                    </div>
+
+                    <h2>Uninstalling</h2>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label">Terminal</span>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        <div class="code-content">curl -fsSL https://raw.githubusercontent.com/aaronmedina-dev/WhatThePatch/main/uninstall.sh | bash</div>
+                    </div>
+
+                    <p>Or manually:</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label">Terminal</span>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        <div class="code-content">rm -rf ~/.whatthepatch ~/.local/bin/wtp</div>
+                    </div>
+
+                    <h2>Next Steps</h2>
+                    <ul>
+                        <li><a href="quick-start.html">Quick Start Guide</a> - Run your first PR review</li>
+                        <li><a href="engines.html">AI Engines</a> - Configure your preferred AI provider</li>
+                    </ul>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="footer-content">
+                    <span>WhatThePatch by <a href="https://aaronmedina-dev.github.io/">Aaron Medina</a></span>
+                    <div class="footer-links">
+                        <a href="https://github.com/aaronmedina-dev/WhatThePatch" target="_blank">GitHub</a>
+                        <a href="https://github.com/aaronmedina-dev/WhatThePatch/issues" target="_blank">Issues</a>
+                    </div>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <button class="scroll-top" aria-label="Scroll to top">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M18 15l-6-6-6 6"/>
+        </svg>
+    </button>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
