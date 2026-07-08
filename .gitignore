@@ -44,3 +44,5 @@ coverage.xml
 *.cover
 .hypothesis/
 tests/report.html
+
+TASKS/
