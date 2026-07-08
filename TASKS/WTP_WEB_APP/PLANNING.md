@@ -341,10 +341,10 @@ Each phase is a working increment, PR'd separately into `feature/wtp-web-app` (o
 | 2 | **Finding line-anchors may be wrong** (model output) | Validate against stored diff before inline posting; degrade to general comment. |
 | 3 | **Ollama won't emit the findings JSON reliably** (documented model-capability gap - must not try to "fix" in code) | Markdown-fallback parser; findings from Ollama runs marked low-confidence, inline posting disabled for them. |
 | 4 | **Large diffs blow the chat context** | `check_context_size()` + truncation order (diff first, review last); surface a warning chip in the UI. |
-| 5 | **Install model**: webapp adds ~5 deps CLI users don't need | Separate `requirements-web.txt`; `wtp --web` prints install hint if FastAPI missing. Confirm at Phase 5 whether to fold into main requirements. |
+| 5 | **Install model**: webapp adds ~5 deps CLI users don't need | **DECIDED (2026-07-08):** separate `requirements-web.txt`; `wtp --web` prints install hint if FastAPI missing. |
 | 6 | **Repo copy vs installed copy divergence** (`~/.whatthepatch/` is a snapshot) | Development runs from the repo (`python -m webapp.server`); release ships via existing manifest/update mechanism. |
 | 7 | **Concurrent runs on the same PR** | Serialize per-PR (queue), allow parallel across PRs. |
-| 8 | Conversation scope: per-PR (chosen) vs per-run | Chosen per-PR with `run_id` tagging on messages - keeps one continuous thread as the PR evolves. Revisit if confusing. |
+| 8 | Conversation scope: per-PR vs per-run | **DECIDED (2026-07-08):** per-PR with `run_id` tagging on messages - one continuous thread as the PR evolves. |
 
 ---
 
@@ -362,3 +362,4 @@ Each phase is a working increment, PR'd separately into `feature/wtp-web-app` (o
 | Date | Change |
 |---|---|
 | 2026-07-08 | Initial planning document |
+| 2026-07-08 | Confirmed decisions: separate `requirements-web.txt`; per-PR conversation scope |
