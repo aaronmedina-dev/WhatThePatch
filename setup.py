@@ -17,6 +17,7 @@ import stat
 import subprocess
 import sys
 from pathlib import Path
+from typing import Optional
 
 from banner import print_banner
 
@@ -863,6 +864,73 @@ def get_cli_install_dir() -> Path:
     return local_bin
 
 
+def find_installed_cli() -> Optional[Path]:
+    """Return the path of an already installed CLI command, or None."""
+    which_path = shutil.which(CLI_NAME)
+    if which_path:
+        return Path(which_path)
+
+    # The command may exist but not be on PATH yet
+    for candidate in (
+        Path.home() / ".local" / "bin" / CLI_NAME,
+        Path("/usr/local/bin") / CLI_NAME,
+    ):
+        if candidate.exists():
+            return candidate
+
+    return None
+
+
+def get_shell_profile() -> str:
+    """Guess the user's shell profile file from $SHELL."""
+    shell = os.environ.get("SHELL", "")
+    if "zsh" in shell:
+        return "~/.zshrc"
+    if "bash" in shell:
+        return "~/.bashrc"
+    return "~/.zshrc"
+
+
+def print_shell_setup(cli_path: Path, on_path: bool):
+    """Print the shell configuration needed to run the CLI command."""
+    cli_install_dir = cli_path.parent
+    profile = get_shell_profile()
+    if profile == "~/.zshrc":
+        other_profile, other_shell = "~/.bashrc", "bash"
+    else:
+        other_profile, other_shell = "~/.zshrc", "zsh"
+
+    # Use $HOME in the snippets so they stay portable across machines
+    home_bin = Path.home() / ".local" / "bin"
+    if cli_install_dir == home_bin:
+        path_snippet = 'export PATH="$HOME/.local/bin:$PATH"'
+        alias_snippet = f'alias {CLI_NAME}="$HOME/.local/bin/{CLI_NAME}"'
+    else:
+        path_snippet = f'export PATH="{cli_install_dir}:$PATH"'
+        alias_snippet = f'alias {CLI_NAME}="{cli_path}"'
+
+    print("\nShell Setup")
+    print("-" * 40)
+    print(f"The {CLI_NAME} command lives at: {cli_path}")
+
+    if on_path:
+        print(f"\n{cli_install_dir} is already on your PATH, so no changes are needed.")
+        print(f"If your shell still reports '{CLI_NAME}: command not found',")
+        print("it has cached an old command list. Refresh it with:")
+        print("\n  hash -r")
+        print(f"\nYou can now use: {CLI_NAME} --review <PR_URL>")
+        return
+
+    print(f"\n{cli_install_dir} is NOT on your PATH, so your shell cannot find it yet.")
+    print(f"Add this line to your {profile} (or {other_profile} if you use {other_shell}):")
+    print(f"\n  {path_snippet}")
+    print("\nPrefer not to change your PATH? An alias works too:")
+    print(f"\n  {alias_snippet}")
+    print("\nThen reload your shell so the change takes effect:")
+    print(f"\n  source {profile}")
+    print(f"\nAfter that, you can use: {CLI_NAME} --review <PR_URL>")
+
+
 def install_cli():
     """Install the wtp CLI command."""
     print_step(5, "Installing CLI Command")
@@ -891,14 +959,7 @@ exec "{sys.executable}" "{main_script}" "$@"
 
         # Check if cli_install_dir is in PATH
         path_dirs = os.environ.get("PATH", "").split(os.pathsep)
-        if str(cli_install_dir) not in path_dirs:
-            print(f"\nNote: {cli_install_dir} is not in your PATH.")
-            print("Add it to your shell profile (~/.bashrc, ~/.zshrc, etc.):")
-            print(f'  export PATH="$PATH:{cli_install_dir}"')
-            print("\nThen restart your terminal or run:")
-            print(f'  source ~/.zshrc  # or ~/.bashrc')
-        else:
-            print(f"\nYou can now use: {CLI_NAME} --review <PR_URL>")
+        print_shell_setup(cli_path, str(cli_install_dir) in path_dirs)
 
         return True
     except PermissionError:
@@ -983,6 +1044,10 @@ def main():
         default=0,
     )
 
+    # install_cli() prints its own shell setup notes, so the summary below
+    # only repeats them when the CLI step was not part of this run
+    cli_installed_now = False
+
     if choice == 0:  # Full setup
         if not install_dependencies():
             print("\nSetup failed at dependency installation.")
@@ -995,6 +1060,7 @@ def main():
             sys.exit(1)
         run_tests()
         install_cli()
+        cli_installed_now = True
 
     elif choice == 1:  # Install files only
         install_dependencies()
@@ -1008,10 +1074,24 @@ def main():
 
     elif choice == 4:  # Install CLI only
         install_cli()
+        cli_installed_now = True
 
     print_header("Setup Complete")
     print(f"Files installed to: {INSTALL_DIR}")
     print(f"You can now delete this repository folder if desired.\n")
+
+    if not cli_installed_now:
+        cli_path = find_installed_cli()
+        if cli_path is None:
+            print(f"Heads up: the {CLI_NAME} command has not been installed yet, so your")
+            print(f"shell will report '{CLI_NAME}: command not found'. Run this setup again")
+            print("and choose 'Install CLI command only' to create it.\n")
+        else:
+            path_dirs = os.environ.get("PATH", "").split(os.pathsep)
+            if str(cli_path.parent) not in path_dirs:
+                print_shell_setup(cli_path, False)
+                print("")
+
     print("Run PR reviews with:")
     print(f"  {CLI_NAME} --review <PR_URL>")
     print("\nCommands:")
