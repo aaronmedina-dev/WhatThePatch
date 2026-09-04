@@ -6,14 +6,28 @@ Common issues and how to resolve them.
 
 ### "wtp: command not found"
 
-The CLI command is not in your PATH. Either:
+Either the command was never installed, or it is installed but not on your PATH.
 
-1. Run `python setup.py` and select "Install CLI command only"
-2. Add `~/.local/bin` to your PATH:
+1. Check whether the command exists:
    ```bash
-   export PATH="$PATH:$HOME/.local/bin"
+   ls ~/.local/bin/wtp
    ```
-   Add this line to your `~/.zshrc` or `~/.bashrc` to make it permanent.
+   If it is missing, run `python setup.py` and select "Install CLI command only".
+   Installing files or configuring alone does not create the command.
+
+2. If it exists, add `~/.local/bin` to your PATH by putting this line in your
+   `~/.zshrc` (zsh) or `~/.bashrc` (bash):
+   ```bash
+   export PATH="$HOME/.local/bin:$PATH"
+   ```
+   If you would rather not change your PATH, an alias works too:
+   ```bash
+   alias wtp="$HOME/.local/bin/wtp"
+   ```
+   Either way, reload your shell afterwards with `source ~/.zshrc`.
+
+3. If the command exists and is on your PATH but your shell still cannot find
+   it, the shell has cached an older command list. Refresh it with `hash -r`.
 
 ## Package Issues
 
